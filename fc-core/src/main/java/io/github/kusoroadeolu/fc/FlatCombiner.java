@@ -7,6 +7,7 @@ package io.github.kusoroadeolu.fc;
  * is amortized by threads publishing a request to a publication list and a combiner (a thread that acquired the lock)
  * is made aware of requests published by other waiting threads by scanning the publication list
  *
+ * States:
  * A node can be said to be detached from the queue when its age is set to -1
  * A node can be said to be applied when its action is nulled
  * */
