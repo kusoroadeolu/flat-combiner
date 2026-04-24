@@ -1,6 +1,6 @@
 package io.github.kusoroadeolu.fc.jmh;
 
-import io.github.kusoroadeolu.fc.FlatCombiner;
+import io.github.kusoroadeolu.fc.Combiner;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
@@ -20,9 +20,9 @@ CombinerBench.twoThreads    thrpt   25  4395401.110 ± 514275.355  ops/s
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
-@Measurement(iterations = 10, time = 1)
+@Measurement(iterations = 5, time = 1)
 public class CombinerBench {
-    private FlatCombiner<?> combiner;
+    private Combiner<?> combiner;
 
 
     @AuxCounters
@@ -34,7 +34,7 @@ public class CombinerBench {
 
     @Setup
     public void setup(){
-        combiner = new FlatCombiner<>(0);
+        combiner = new Combiner<>(0);
     }
 
 
@@ -68,7 +68,7 @@ public class CombinerBench {
     }
 
 
-    public static class CounterRunner{
+    public static class CombinerRunner {
         void main() throws Exception {
             Options opt = new OptionsBuilder()
                     .include(CombinerBench.class.getSimpleName())

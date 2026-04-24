@@ -11,6 +11,7 @@
     <modules>
         <module>fc-core</module>
         <module>fc-jmh</module>
+        <module>fc-stress</module>
     </modules>
 
     <properties>
@@ -23,6 +24,12 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>6.0.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.lincheck</groupId>
+            <artifactId>lincheck</artifactId>
+            <version>3.5</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
