@@ -1,4 +1,4 @@
-package io.github.kusoroadeolu.fc;/*
+package io.github.kusoroadeolu.fc.jmh.combiners;/*
  * Based on the paper https://people.csail.mit.edu/shanir/publications/Flat%20Combining%20SPAA%2010.pdf
  * The core idea of flat combining is the cost of obtaining a lock to a shared data structure
  * is amortized by threads publishing a request to a publication list and a combiner (a thread that acquired the lock)
@@ -9,6 +9,7 @@ package io.github.kusoroadeolu.fc;/*
  * A node can be said to be applied when its action is nulled
  * */
 
+import io.github.kusoroadeolu.fc.FlatCombiner;
 import org.openjdk.jol.info.ClassLayout;
 
 import java.lang.invoke.MethodHandles;
@@ -49,8 +50,8 @@ import java.util.function.Consumer;
 
 
 
-
-public class PaddedFlatCombiner<T> implements Combiner<T>{
+//Here just for comparison, not an actual combiner, the padding doesn't help much all in all.
+public class PaddedFlatCombiner<T>{
     private final Lock lock;
     private final ThreadLocal<Node<T>> pNode;
     private final T item;

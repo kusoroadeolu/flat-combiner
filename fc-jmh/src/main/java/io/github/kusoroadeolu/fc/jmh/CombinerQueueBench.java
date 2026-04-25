@@ -159,10 +159,9 @@ public class CombinerQueueBench {
     private void enqueueAndRecord(Blackhole bh, ThreadState ts, BatchCounters counters) {
         boolean isEnqueue = ts.enqueue;
         ts.enqueue = !isEnqueue;
-        int batch = isEnqueue
+        Object batch = isEnqueue
                 ? combiner.combine(q -> q.offer(42))
                 : combiner.combine(Queue::poll);
-        trackBatch(batch, counters);
         bh.consume(batch);
     }
 

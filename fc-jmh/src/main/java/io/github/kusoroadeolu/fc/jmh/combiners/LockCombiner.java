@@ -1,7 +1,9 @@
-package io.github.kusoroadeolu.fc;
+package io.github.kusoroadeolu.fc.jmh.combiners;
+
+import io.github.kusoroadeolu.fc.Combiner;
 
 import java.util.Objects;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class LockCombiner<T> implements Combiner<T> {
     private final Object lock;
@@ -13,11 +15,9 @@ public class LockCombiner<T> implements Combiner<T> {
     }
 
     @Override
-    public int combine(Consumer<T> action) {
+    public <R>R combine(Function<T, R> action) {
         synchronized (lock){
-            action.accept(item);
+           return action.apply(item);
         }
-
-        return -1; //Lock based combiner doesnt matter
     }
 }

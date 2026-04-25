@@ -2,7 +2,6 @@ package io.github.kusoroadeolu.fc.jmh;
 
 import io.github.kusoroadeolu.fc.Combiner;
 import io.github.kusoroadeolu.fc.FlatCombiner;
-import io.github.kusoroadeolu.fc.PaddedFlatCombiner;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -126,7 +125,7 @@ public class CombinerPriorityQueueBench {
     public void setup() {
         PriorityQueue<Integer> pq = new PriorityQueue<>();
         for (int i = 0; i < 1000; i++) pq.offer(i);
-        combiner = new PaddedFlatCombiner<>(pq);
+        combiner = new FlatCombiner<>(pq);
     }
 
     @Threads(2)
@@ -162,20 +161,10 @@ public class CombinerPriorityQueueBench {
     private void doWork(Blackhole bh, ThreadState ts, BatchCounters counters) {
         boolean isInsert = ts.insert;
         ts.insert = !isInsert;
-        int batch;
+        Object batch;
         if (isInsert) batch = combiner.combine(pq -> pq.offer(ThreadLocalRandom.current().nextInt(10_000)));
         else batch = combiner.combine(PriorityQueue::poll);
-        trackBatch(batch, counters);
         bh.consume(batch);
     }
 
-    private void trackBatch(int batch, BatchCounters counters) {
-        counters.totalOps++;
-        if (batch > 0) {
-            counters.totalBatchSize += batch;
-            if (batch == 1)          counters.batchSize1++;
-            else if (batch <= 5)     counters.batchSize2to5++;
-            else if (batch <= 20)    counters.batchSize6to20++;
-        }
-    }
 }

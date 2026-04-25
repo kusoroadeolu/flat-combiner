@@ -34,7 +34,7 @@ class FlatCombinerTest {
         try(var ex = Executors.newVirtualThreadPerTaskExecutor()) {
            for (int i = 0; i < 3; ++i){
                ex.submit(() -> {
-                   int pass = combiner.combine(l -> l.add(1));
+                   combiner.combine(l -> l.add(1));
                    wait.countDown();
                });
            }

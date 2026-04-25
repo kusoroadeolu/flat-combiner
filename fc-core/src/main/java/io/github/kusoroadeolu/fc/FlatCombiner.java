@@ -19,7 +19,7 @@ import java.lang.invoke.VarHandle;
 import java.util.Objects;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 /*
 * Algo:
@@ -53,9 +53,9 @@ import java.util.function.Consumer;
 
 public class FlatCombiner<T> implements Combiner<T>{
     private final Lock lock;
-    private final ThreadLocal<Node<T>> pNode;
+    private final ThreadLocal<Node<T, Object>> pNode;
     private final T item;
-    private final PublicationQueue<T> pubList;
+    private final PublicationQueue<T, Object> pubList;
     private static final int MAX_COMBINE_PASS = 100;
     private int combinePass;
 
@@ -67,30 +67,35 @@ public class FlatCombiner<T> implements Combiner<T>{
         this.pubList = new PublicationQueue<>();
     }
 
-    public int combine(Consumer<T> action) {
+
+    @SuppressWarnings("unchecked")
+    public <R>R combine(Function<T, R> action) {
         Objects.requireNonNull(action);
-        Node<T> ours = pNode.get();
+        Node<T, R> ours = (Node<T, R>) pNode.get();
         Lock l = lock;
-        PublicationQueue<T> list = pubList;
+        PublicationQueue<T, R> list = (PublicationQueue<T, R>) pubList;
         ours.soAction(action); //A release fence in the case we're still active in the queue, if not then we ideally will be backed by the cas to head op
-        int combineCount = -1;
+        ours.spItem(null); //We really don't need a happens before for this write. Since the combiner will never read the item
+
         if (ours.laAge() == -1) {
             list.casToHead(ours);
         }
 
         //Volatile read.
-        while (!ours.isApplied()) {
+        while (!ours.isApplied()) { //Get acquire, item should always be visible if this is read
             if (l.tryLock()) {
                 try {
                     if (ours.laAge() == -1) list.casToHead(ours);
-                    combineCount = 0;
-                    Node<T> curr = list.lvHead();
+                    int combineCount = 0;
+                    Node<T, R> curr = list.lvHead();
+                    T item = this.item;
                     ++combinePass;
                     while (curr != null && combineCount < MAX_COMBINE_PASS) {
                         var a =  curr.loAction();
                         if (a != null) { //Applied action skip
                             ++combineCount;
-                            a.accept(item);
+                            var res = a.apply(item);
+                            curr.spItem(res); //Plain write to the node's result, always backed
                             curr.spAge(combinePass); //Doesn't need to be a volatile write since only the combiner ever reads it
                             curr.soAction(null);
                         }
@@ -106,19 +111,19 @@ public class FlatCombiner<T> implements Combiner<T>{
                     l.unlock();
                 }
 
-                return combineCount;
+                return ours.lpItem();
             }
 
             int count = 0;
             while (++count < 100) {
-                if (ours.isApplied()) break;
+                if (ours.isApplied()) return ours.lpItem();
                 Thread.onSpinWait();
             }
 
-            if (ours.laAge() == -1) list.casToHead(ours); //Reappend if we're dead
+            if (ours.laAge() == -1) list.casToHead(ours); //Re-append if we're dead
         }
 
-        return combineCount;
+        return ours.lpItem();
     }
 
 
@@ -133,22 +138,23 @@ public class FlatCombiner<T> implements Combiner<T>{
 
 
     @SuppressWarnings("unchecked")
-    static class Node<T>{
-        volatile Consumer<T> action; //We're spinning on this, need to ensure it is on its own cache line
+    static class Node<T, R>{
+        volatile Function<T, R> action; //We're spinning on this, need to ensure it is on its own cache line
         volatile int age = -1;
-        volatile Node<T> next;
+        volatile Node<T, R> next;
+        R item;
 
         //Set plain, will be backed by a volatile cas
-        public void spNext(Node<T> node) {
+        public void spNext(Node<T, R> node) {
             NEXT.set(this, node);
         }
 
-        Node<T> lpNext(){
-            return (Node<T>) NEXT.get(this);
+        Node<T, R> lpNext(){
+            return (Node<T, R>) NEXT.get(this);
         }
 
-        Node<T> laNext(){
-           return  (Node<T>) NEXT.getAcquire(this);
+        Node<T, R> laNext(){
+           return  (Node<T, R>) NEXT.getAcquire(this);
         }
 
         boolean isApplied(){
@@ -167,37 +173,35 @@ public class FlatCombiner<T> implements Combiner<T>{
             AGE.set(this, a);
         }
 
-        void soAction(Consumer<T> action){
+        public void spItem(R item){
+            this.item = item;
+        }
+
+        public R lpItem(){
+            return item;
+        }
+
+        void soAction(Function<T, R> action){
             ACTION.setRelease(this, action);
         }
 
-        Consumer<T> loAction(){
-            return (Consumer<T>) ACTION.getAcquire(this);
+        Function<T, R> loAction(){
+            return (Function<T, R>) ACTION.getAcquire(this);
         }
-
-        @Override
-        public String toString() {
-            return "Node[" +
-                    "age=" + age +
-                    ", action=" + action +
-                    ", next=" + next +
-                    ']';
-        }
-
 
     }
 
 
     @SuppressWarnings("unchecked")
-    static class PublicationQueue<T> {
-        private volatile Node<T> head;
+    static class PublicationQueue<T, R> {
+        private volatile Node<T, R> head;
 
         public PublicationQueue() {
             this.head = null;
         }
 
-        public void casToHead(Node<T> node){
-            Node<T> next;
+        public void casToHead(Node<T, R> node){
+            Node<T, R> next;
             do {
                 next = lvHead();
                 node.spNext(next); //Backed by volatile write, if it succeeds
@@ -208,8 +212,8 @@ public class FlatCombiner<T> implements Combiner<T>{
         //We want to prune old nodes, we have to avoid modifying the head, this should only be accessed by one thread at a time
         //Next will always be visible from the head, as long as, p != null, we keep pruning
         public void detachOldNodes(int count, int threshold) {
-            Node<T> prev = lvHead();
-            Node<T> curr = prev.lpNext(), succ;
+            Node<T, R> prev = lvHead();
+            Node<T, R> curr = prev.lpNext(), succ;
 
             for (; curr != null; curr = succ){
                 succ = curr.laNext();
@@ -222,8 +226,8 @@ public class FlatCombiner<T> implements Combiner<T>{
             }
         }
 
-        public Node<T> lvHead(){
-            return (Node<T>) HEAD.getVolatile(this);
+        public Node<T, R> lvHead(){
+            return (Node<T, R>) HEAD.getVolatile(this);
         }
 
         public int countDeadNodes(){
@@ -256,7 +260,7 @@ public class FlatCombiner<T> implements Combiner<T>{
     static {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
-            ACTION = lookup.findVarHandle(Node.class, "action", Consumer.class);
+            ACTION = lookup.findVarHandle(Node.class, "action", Function.class);
             NEXT = lookup.findVarHandle(Node.class, "next", Node.class);
             HEAD = lookup.findVarHandle(PublicationQueue.class, "head", Node.class);
             AGE = lookup.findVarHandle(Node.class, "age", int.class);

@@ -1,8 +1,9 @@
 package io.github.kusoroadeolu.fc;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public interface Combiner<T> {
-    int combine(Consumer<T> action);
+    <R>R combine(Function<T, R> action);
 
 }
