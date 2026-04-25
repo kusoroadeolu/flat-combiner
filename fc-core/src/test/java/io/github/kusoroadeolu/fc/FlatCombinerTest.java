@@ -13,13 +13,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 //Sanity tests
 class FlatCombinerTest {
-    private Combiner<List<Integer>> combiner;
+    private FlatCombiner<List<Integer>> combiner;
     private List<Integer> list;
 
     @BeforeEach
     void setUp() {
         list = new ArrayList<>();
-        combiner = new Combiner<>(list);
+        combiner = new FlatCombiner<>(list);
     }
 
     @Test

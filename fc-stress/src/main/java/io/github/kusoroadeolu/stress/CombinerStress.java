@@ -1,6 +1,6 @@
 package io.github.kusoroadeolu.stress;
 
-import io.github.kusoroadeolu.fc.Combiner;
+import io.github.kusoroadeolu.fc.FlatCombiner;
 import org.openjdk.jcstress.annotations.*;
 import org.openjdk.jcstress.infra.results.I_Result;
 
@@ -16,12 +16,12 @@ public class CombinerStress {
     @Outcome(id = "0", expect = Expect.FORBIDDEN, desc = "Invariant violated")
     @State
     public static class QueueAddRemoveTest {
-        public final Combiner<Queue<Integer>> fc;
+        public final FlatCombiner<Queue<Integer>> fc;
         public final Queue<Integer> queue;
 
         public QueueAddRemoveTest() {
             this.queue = new ArrayDeque<>();
-            this.fc = new Combiner<>(queue);
+            this.fc = new FlatCombiner<>(queue);
             queue.add(1); queue.add(2); queue.add(3);
 
         }
@@ -50,10 +50,10 @@ public class CombinerStress {
     @Outcome(id = "0", expect = Expect.ACCEPTABLE, desc = "Pruning succeeded")
     @State
     public static class DeadNodeStress {
-        public final Combiner<Integer> fc;
+        public final FlatCombiner<Integer> fc;
 
         public DeadNodeStress() {
-            this.fc = new Combiner<>(0);
+            this.fc = new FlatCombiner<>(0);
 
         }
 
@@ -83,10 +83,10 @@ public class CombinerStress {
     @Outcome(id = "1", expect = Expect.ACCEPTABLE, desc = "Can reach tail")
     @State
     public static class TailInvariantStress {
-        public final Combiner<Integer> fc;
+        public final FlatCombiner<Integer> fc;
 
         public TailInvariantStress() {
-            this.fc = new Combiner<>(0);
+            this.fc = new FlatCombiner<>(0);
 
         }
 
