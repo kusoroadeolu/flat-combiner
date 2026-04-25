@@ -2,7 +2,6 @@ package io.github.kusoroadeolu.fc.jmh;
 
 import io.github.kusoroadeolu.fc.Combiner;
 import io.github.kusoroadeolu.fc.FlatCombiner;
-import io.github.kusoroadeolu.fc.LockCombiner;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -10,7 +9,7 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
@@ -59,6 +58,14 @@ CombinerQueueBench.eightThreads:totalOps             lock  thrpt   45  22.054 ±
 CombinerQueueBench.twoThreads:totalOps               lock  thrpt   45  19.896 ±  1.495  ops/us
 * */
 
+
+/* Latency
+* Benchmark                                        Mode  Cnt        Score        Error  Units
+CombinerQueueBench.eightThreads                  avgt   45        0.489 ±      0.009  us/op
+CombinerQueueBench.fourThreads                   avgt   45        0.328 ±      0.008  us/op
+CombinerQueueBench.twoThreads                    avgt   45        0.181 ±      0.021  us/op
+* */
+
 /*
 *
 * At 2 threads, batchSize1 dominates threads are barely combining.
@@ -72,12 +79,10 @@ public class CombinerQueueBench {
 
     private Combiner<Queue<Integer>> combiner;
 
-    @Param({"lock", "combiner"})
-    String type;
 
     @State(Scope.Thread)
     public static class ThreadState {
-        boolean enqueue = true; // alternate per-thread
+        boolean enqueue = true;
     }
 
     @AuxCounters
@@ -101,8 +106,7 @@ public class CombinerQueueBench {
         Queue<Integer> queue = new ArrayDeque<>();
         // Pre-fill so dequeues don't always hit empty
         for (int i = 0; i < 1000; i++) queue.offer(i);
-        if (type.equalsIgnoreCase("lock")) combiner = new LockCombiner<>(queue);
-        else combiner = new FlatCombiner<>(queue);
+        combiner = new FlatCombiner<>(queue);
     }
 
     private void trackBatch(int batch, BatchCounters counters) {

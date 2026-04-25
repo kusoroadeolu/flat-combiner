@@ -12,6 +12,8 @@ package io.github.kusoroadeolu.fc;
  * A node can be said to be applied when its action is nulled
  * */
 
+import org.openjdk.jol.info.ClassLayout;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Objects;
@@ -47,8 +49,16 @@ import java.util.function.Consumer;
 *           If lvIsApplied return;
 *
 * */
-public class FlatCombiner<T> implements Combiner<T>{
 
+class ThreadLocalFieldPad {
+    long l1, l2, l3, l4, l5, l6, l7, l8, l9;
+    long l10, l11, l12, l13, l14, l15, l16, l17;
+}
+
+
+
+
+public class FlatCombiner<T> implements Combiner<T>{
     private final Lock lock;
     private final ThreadLocal<Node<T>> pNode;
     private final T item;
@@ -89,7 +99,7 @@ public class FlatCombiner<T> implements Combiner<T>{
                             ++combineCount;
                             a.accept(item);
                             curr.spAge(combinePass); //Doesn't need to be a volatile write since only the combiner ever reads it
-                            curr.soAction(null); // mark as applied, set release here to preve
+                            curr.soAction(null);
                         }
 
                         curr = curr.laNext();
@@ -128,13 +138,71 @@ public class FlatCombiner<T> implements Combiner<T>{
         return pubList.canReachTail();
     }
 
+    public static class ConsumerFieldLPad {
+        byte b000,b001,b002,b003,b004,b005,b006,b007;//  8b
+        byte b010,b011,b012,b013,b014,b015,b016,b017;// 16b
+        byte b020,b021,b022,b023,b024,b025,b026,b027;// 24b
+        byte b030,b031,b032,b033,b034,b035,b036,b037;// 32b
+        byte b040,b041,b042,b043,b044,b045,b046,b047;// 40b
+        byte b050,b051,b052,b053,b054,b055,b056,b057;// 48b
+        byte b060,b061,b062,b063,b064,b065,b066,b067;// 56b
+        byte b070,b071,b072,b073,b074,b075,b076,b077;// 64b
+        byte b100,b101,b102,b103,b104,b105,b106,b107;// 72b
+        byte b110,b111,b112,b113,b114,b115,b116,b117;// 80b
+        byte b120,b121,b122,b123,b124,b125,b126,b127;// 88b
+        byte b130,b131,b132,b133,b134,b135,b136,b137;// 96b
+        byte b140,b141,b142,b143,b144,b145,b146,b147;//104b
+        byte b150,b151,b152,b153,b154,b155,b156,b157;//112b
+        byte b160,b161,b162,b163,b164,b165,b166,b167;//120b
+    }
+
+    public static class ConsumerField<T> extends ConsumerFieldLPad{
+        volatile Consumer<T> action; //We're spinning on this, need to ensure it is on its own cache line
+    }
+
+    public static class ConsumerFieldRPad<T> extends ConsumerField<T>{
+        byte b000,b001,b002,b003,b004,b005,b006,b007;//  8b
+        byte b010,b011,b012,b013,b014,b015,b016,b017;// 16b
+        byte b020,b021,b022,b023,b024,b025,b026,b027;// 24b
+        byte b030,b031,b032,b033,b034,b035,b036,b037;// 32b
+        byte b040,b041,b042,b043,b044,b045,b046,b047;// 40b
+        byte b050,b051,b052,b053,b054,b055,b056,b057;// 48b
+        byte b060,b061,b062,b063,b064,b065,b066,b067;// 56b
+        byte b070,b071,b072,b073,b074,b075,b076,b077;// 64b
+        byte b100,b101,b102,b103,b104,b105,b106,b107;// 72b
+        byte b110,b111,b112,b113,b114,b115,b116,b117;// 80b
+        byte b120,b121,b122,b123,b124,b125,b126,b127;// 88b
+        byte b130,b131,b132,b133,b134,b135,b136,b137;// 96b
+        byte b140,b141,b142,b143,b144,b145,b146,b147;//104b
+        byte b150,b151,b152,b153,b154,b155,b156,b157;//112b
+        byte b160,b161,b162,b163,b164,b165,b166,b167;//120b
+    }
+
+    public static class NodeField<T> extends ConsumerFieldRPad<T>{
+        volatile int age = -1;
+        volatile Node<T> next;
+    }
+
+    public static class NodeFieldRPad<T> extends NodeField<T> {
+        byte b000,b001,b002,b003,b004,b005,b006,b007;//  8b
+        byte b010,b011,b012,b013,b014,b015,b016,b017;// 16b
+        byte b020,b021,b022,b023,b024,b025,b026,b027;// 24b
+        byte b030,b031,b032,b033,b034,b035,b036,b037;// 32b
+        byte b040,b041,b042,b043,b044,b045,b046,b047;// 40b
+        byte b050,b051,b052,b053,b054,b055,b056,b057;// 48b
+        byte b060,b061,b062,b063,b064,b065,b066,b067;// 56b
+        byte b070,b071,b072,b073,b074,b075,b076,b077;// 64b
+        byte b100,b101,b102,b103,b104,b105,b106,b107;// 72b
+        byte b110,b111,b112,b113,b114,b115,b116,b117;// 80b
+        byte b120,b121,b122,b123,b124,b125,b126,b127;// 88b
+        byte b130,b131,b132,b133,b134,b135,b136,b137;// 96b
+        byte b140,b141,b142,b143,b144,b145,b146,b147;//104b
+        byte b150,b151,b152,b153,b154,b155,b156,b157;//112b
+        byte b160,b161,b162,b163,b164,b165,b166,b167;//120b
+    }
 
     @SuppressWarnings("unchecked")
-    static class Node<T>  {
-        volatile int age = -1;
-        volatile Consumer<T> action;
-        volatile Node<T> next;
-
+    static class Node<T> extends NodeFieldRPad<T>{
         //Set plain, will be backed by a volatile cas
         public void spNext(Node<T> node) {
             NEXT.set(this, node);
@@ -149,7 +217,7 @@ public class FlatCombiner<T> implements Combiner<T>{
         }
 
         boolean isApplied(){
-           return ACTION.getAcquire(this) == null;
+           return loAction() == null;
         }
 
         int laAge() {
@@ -180,6 +248,8 @@ public class FlatCombiner<T> implements Combiner<T>{
                     ", next=" + next +
                     ']';
         }
+
+
     }
 
 
@@ -257,6 +327,12 @@ public class FlatCombiner<T> implements Combiner<T>{
             AGE = lookup.findVarHandle(Node.class, "age", int.class);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    static class Main {
+        static void main() {
+            System.out.println(ClassLayout.parseClass(FlatCombiner.class).toPrintable());
         }
     }
 }

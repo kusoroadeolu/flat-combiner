@@ -6,7 +6,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
@@ -14,11 +14,18 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 
 //Baseline bench as per the paper, measures flat combining approach against a lock free linear structure
-/*
+/* Thrpt
 * Benchmark                   Mode  Cnt   Score   Error   Units
 MSQueueBench.eightThreads  thrpt   45  10.795 ± 0.124  ops/us
 MSQueueBench.fourThreads   thrpt   45   9.929 ± 0.111  ops/us
 MSQueueBench.twoThreads    thrpt   45  11.270 ± 0.371  ops/us
+* */
+
+/* Latency
+* Benchmark                  Mode  Cnt  Score   Error  Units
+MSQueueBench.eightThreads  avgt   45  0.783 ± 0.008  us/op
+MSQueueBench.fourThreads   avgt   45  0.445 ± 0.009  us/op
+MSQueueBench.twoThreads    avgt   45  0.159 ± 0.005  us/op
 * */
 public class MSQueueBench {
 
