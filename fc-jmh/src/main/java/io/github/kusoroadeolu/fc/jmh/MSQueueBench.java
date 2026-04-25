@@ -6,7 +6,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
