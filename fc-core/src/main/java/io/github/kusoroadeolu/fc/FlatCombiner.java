@@ -81,14 +81,13 @@ public class FlatCombiner<T> implements Combiner<T>{
         Lock l = lock;
         PublicationQueue<T, R> list = (PublicationQueue<T, R>) pubList;
 
-        //Ideally the paper pushes towards a plain write here, I do believe it is under the assumption this write will be backed by the cas to head op when enqueueing,
+        //Ideally the paper pushes towards a plain write for the action field, I do believe it is under the assumption this write will be backed by the cas to head op when enqueueing,
         // there's no HB visibility guarantee between this write being seen by the combiner if we use a plain write
         ours.spItem(null); //Ensure we don't write after we've published our action, could lead to a race condition where we overwrite if the combiner has already applied our action
         ours.soAction(action); //A release fence in the case we're still active in the queue. //Linearizability point where we are active if we're already on the queue
 
 
         if (ours.loAge() == -1) {
-
             list.casToHead(ours);
         }
 

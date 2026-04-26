@@ -1,8 +1,12 @@
 package io.github.kusoroadeolu.fc.jmh;
 
+import io.github.kusoroadeolu.fc.Combiners;
+import io.github.kusoroadeolu.fc.FlatCombiner;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +32,10 @@ PriorityQueueBench.twoThreads        thrpt   45  6.301 ± 0.790  ops/us
 * */
 
 public class PriorityQueueBench {
-    private PriorityBlockingQueue<Integer> queue;
+    private Queue<Integer> queue;
+
+    @Param({"JDK", "Combiner"})
+    private String type;
 
     @State(Scope.Thread)
     public static class ThreadState {
@@ -37,7 +44,7 @@ public class PriorityQueueBench {
 
     @Setup
     public void setup() {
-        queue = new PriorityBlockingQueue<>();
+        queue = type.equals("JDK") ? new PriorityBlockingQueue<>() : Combiners.queue(new FlatCombiner<>(new PriorityQueue<>()));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 
