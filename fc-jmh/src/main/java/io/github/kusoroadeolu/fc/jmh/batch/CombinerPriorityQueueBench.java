@@ -1,4 +1,4 @@
-package io.github.kusoroadeolu.fc.jmh;
+package io.github.kusoroadeolu.fc.jmh.batch;
 
 import io.github.kusoroadeolu.fc.Combiner;
 import io.github.kusoroadeolu.fc.FlatCombiner;
@@ -90,8 +90,8 @@ CombinerPriorityQueueBench.twoThreads:totalOps              thrpt   45   7.240 Â
 * */
 
 
-
-
+//Removed the batch counters later on
+//Prune threshold = 100, max combine pass = 100
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
@@ -107,20 +107,6 @@ public class CombinerPriorityQueueBench {
         boolean insert = true;
     }
 
-    @AuxCounters
-    @State(Scope.Thread)
-    public static class BatchCounters {
-        public long totalOps;
-        public long totalBatchSize;
-        public long batchSize1;
-        public long batchSize2to5;
-        public long batchSize6to20;
-
-        public double avgBatchSize() {
-            return totalOps == 0 ? 0 : (double) totalBatchSize / totalOps;
-        }
-    }
-
     @Setup
     public void setup() {
         PriorityQueue<Integer> pq = new PriorityQueue<>();
@@ -130,35 +116,35 @@ public class CombinerPriorityQueueBench {
 
     @Threads(2)
     @Benchmark
-    public void twoThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
-        doWork(bh, ts, counters);
+    public void twoThreads(Blackhole bh, ThreadState ts) {
+        doWork(bh, ts);
     }
 
     @Threads(4)
     @Benchmark
-    public void fourThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
-        doWork(bh, ts, counters);
+    public void fourThreads(Blackhole bh, ThreadState ts) {
+        doWork(bh, ts);
     }
 
     @Threads(8)
     @Benchmark
-    public void eightThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
-        doWork(bh, ts, counters);
+    public void eightThreads(Blackhole bh, ThreadState ts) {
+        doWork(bh, ts);
     }
 
     @Threads(16)
     @Benchmark
-    public void sixteenThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
-        doWork(bh, ts, counters);
+    public void sixteenThreads(Blackhole bh, ThreadState ts) {
+        doWork(bh, ts);
     }
 
     @Threads(32)
     @Benchmark
-    public void thirtyTwoThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
-        doWork(bh, ts, counters);
+    public void thirtyTwoThreads(Blackhole bh, ThreadState ts) {
+        doWork(bh, ts);
     }
 
-    private void doWork(Blackhole bh, ThreadState ts, BatchCounters counters) {
+    private void doWork(Blackhole bh, ThreadState ts) {
         boolean isInsert = ts.insert;
         ts.insert = !isInsert;
         Object batch;

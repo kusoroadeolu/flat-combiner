@@ -16,19 +16,18 @@ import java.util.concurrent.TimeUnit;
 
 /*
 * Benchmark                                     Mode  Cnt  Score   Error   Units
-PriorityBlockingQueueBench.eightThreads      thrpt   45  7.028 ± 1.065  ops/us
-PriorityBlockingQueueBench.fourThreads       thrpt   45  7.277 ± 0.994  ops/us
-PriorityBlockingQueueBench.sixteenThreads    thrpt   45  6.761 ± 1.091  ops/us
-PriorityBlockingQueueBench.thirtyTwoThreads  thrpt   45  6.471 ± 1.084  ops/us
-PriorityBlockingQueueBench.twoThreads        thrpt   45  6.301 ± 0.790  ops/us
+PriorityQueueBench.eightThreads      thrpt   45  7.028 ± 1.065  ops/us
+PriorityQueueBench.fourThreads       thrpt   45  7.277 ± 0.994  ops/us
+PriorityQueueBench.sixteenThreads    thrpt   45  6.761 ± 1.091  ops/us
+PriorityQueueBench.thirtyTwoThreads  thrpt   45  6.471 ± 1.084  ops/us
+PriorityQueueBench.twoThreads        thrpt   45  6.301 ± 0.790  ops/us
 *
 *
 *
 * Performs significantly better than both flat combiners even though the err margins are a bit high
 * */
 
-public class PriorityBlockingQueueBench {
-
+public class PriorityQueueBench {
     private PriorityBlockingQueue<Integer> queue;
 
     @State(Scope.Thread)

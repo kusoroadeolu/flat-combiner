@@ -1,4 +1,4 @@
-package io.github.kusoroadeolu.fc.jmh;
+package io.github.kusoroadeolu.fc.jmh.batch;
 
 import io.github.kusoroadeolu.fc.Combiner;
 import io.github.kusoroadeolu.fc.FlatCombiner;
@@ -102,6 +102,8 @@ CombinerQueueBench.twoThreads:totalOps               lock  thrpt   45  19.896 ±
 *
 * There is still some more areas to improve my flat combiner i.e. reducing the risk of false sharing across nodes, since threads spin on their nodes
 * */
+//Prune threshold = 100, max combine pass = 100
+
 public class CombinerQueueBench {
 
     private Combiner<Queue<Integer>> combiner;
@@ -134,29 +136,19 @@ public class CombinerQueueBench {
         combiner = new FlatCombiner<>(queue);
     }
 
-    private void trackBatch(int batch, BatchCounters counters) {
-        counters.totalOps++;
-        if (batch > 0) {
-            counters.totalBatchSize += batch;
-            if (batch == 1)          counters.batchSize1++;
-            else if (batch <= 5)     counters.batchSize2to5++;
-            else if (batch <= 20)    counters.batchSize6to20++;
-        }
-    }
-
     @Threads(2)
     @Benchmark
-    public void twoThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
-        enqueueAndRecord(bh, ts, counters);
+    public void twoThreads(Blackhole bh, ThreadState ts) {
+        enqueueAndRecord(bh, ts);
     }
 
     @Threads(4)
     @Benchmark
-    public void fourThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
-        enqueueAndRecord(bh, ts, counters);
+    public void fourThreads(Blackhole bh, ThreadState ts) {
+        enqueueAndRecord(bh, ts);
     }
 
-    private void enqueueAndRecord(Blackhole bh, ThreadState ts, BatchCounters counters) {
+    private void enqueueAndRecord(Blackhole bh, ThreadState ts) {
         boolean isEnqueue = ts.enqueue;
         ts.enqueue = !isEnqueue;
         Object batch = isEnqueue
@@ -167,7 +159,7 @@ public class CombinerQueueBench {
 
     @Threads(8)
     @Benchmark
-    public void eightThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
-        enqueueAndRecord(bh, ts, counters);
+    public void eightThreads(Blackhole bh, ThreadState ts) {
+        enqueueAndRecord(bh, ts);
     }
 }

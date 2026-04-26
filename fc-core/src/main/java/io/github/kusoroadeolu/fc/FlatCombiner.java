@@ -9,7 +9,9 @@ package io.github.kusoroadeolu.fc;
  *
  * States:
  * A node can be said to be detached from the queue when its age is set to -1
- * A node can be said to be applied when its action is nulled
+ * A node's result can be said to be applied when its action is nulled.
+ * Happens before - visibility of the result is guaranteed by a set release to a node's action, a plain write to the result is backed by this write.
+ * A get acquire read is made before the result is read
  * */
 
 import org.openjdk.jol.info.ClassLayout;
@@ -49,22 +51,26 @@ import java.util.function.Function;
 *           If lvIsApplied return;
 *
 * */
-
-
 public class FlatCombiner<T> implements Combiner<T>{
     private final Lock lock;
     private final ThreadLocal<Node<T, Object>> pNode;
     private final T item;
     private final PublicationQueue<T, Object> pubList;
-    private static final int MAX_COMBINE_PASS = 100;
+    private final int maxCombinePass;
+    private final int pruneThreshold;
     private int combinePass;
 
-    public FlatCombiner(T item) {
-        Objects.requireNonNull(item);
+    public FlatCombiner(T item, int combinePass, int pruneThreshold) {
         this.lock = new ReentrantLock();
         this.pNode = ThreadLocal.withInitial(Node::new);
-        this.item = item;
+        this.item = Objects.requireNonNull(item);
         this.pubList = new PublicationQueue<>();
+        this.maxCombinePass = Validator.ensureGreaterThanOrEqualToZero( combinePass, "Combine pass");
+        this.pruneThreshold = Validator.ensureGreaterThanOrEqualToZero(pruneThreshold, "Prune threshold");
+    }
+
+    public FlatCombiner(T item) {
+        this(item, 20, 100);
     }
 
 
@@ -74,10 +80,12 @@ public class FlatCombiner<T> implements Combiner<T>{
         Node<T, R> ours = (Node<T, R>) pNode.get();
         Lock l = lock;
         PublicationQueue<T, R> list = (PublicationQueue<T, R>) pubList;
-        ours.soAction(action); //A release fence in the case we're still active in the queue, if not then we ideally will be backed by the cas to head op
-        ours.spItem(null); //We really don't need a happens before for this write. Since the combiner will never read the item
+        //Ideally the paper pushes towards a plain write here, I do believe it is under the assumption this write will be backed by the cas to head op when enqueueing,
+        // there's no HB visibility guarantee between this write being seen by the combiner if we use a plain write
+        ours.spItem(null); //Ensure we don't write after we've published our action, could lead to a race condition where we overwrite if the combiner has already applied our action
+        ours.soAction(action); //A release fence in the case we're still active in the queue. //Linearizability point where we are active if we're already on the queue
 
-        if (ours.laAge() == -1) {
+        if (ours.loAge() == -1) {
             list.casToHead(ours);
         }
 
@@ -85,17 +93,18 @@ public class FlatCombiner<T> implements Combiner<T>{
         while (!ours.isApplied()) { //Get acquire, item should always be visible if this is read
             if (l.tryLock()) {
                 try {
-                    if (ours.laAge() == -1) list.casToHead(ours);
+                    if (ours.loAge() == -1) list.casToHead(ours);
                     int combineCount = 0;
                     Node<T, R> curr = list.lvHead();
                     T item = this.item;
+                    int mcp = maxCombinePass;
+                    int pt = pruneThreshold;
                     ++combinePass;
-                    while (curr != null && combineCount < MAX_COMBINE_PASS) {
+                    while (curr != null && combineCount < mcp) {
                         var a =  curr.loAction();
-                        if (a != null) { //Applied action skip
+                        if (a != null) {
                             ++combineCount;
-                            var res = a.apply(item);
-                            curr.spItem(res); //Plain write to the node's result, always backed
+                            curr.spItem(a.apply(item)); //Plain write to the node's result, always backed
                             curr.spAge(combinePass); //Doesn't need to be a volatile write since only the combiner ever reads it
                             curr.soAction(null);
                         }
@@ -103,15 +112,15 @@ public class FlatCombiner<T> implements Combiner<T>{
                         curr = curr.laNext();
                     }
 
-                    if (combinePass != 0 && combinePass % MAX_COMBINE_PASS == 0) {
-                        list.detachOldNodes(combinePass, MAX_COMBINE_PASS);
+                    if (combinePass != 0 && combinePass % pt == 0) {
+                        list.detachOldNodes(combinePass, pt);
                     }
 
+                   if (ours.isApplied()) return ours.lpItem();
                 }finally {
                     l.unlock();
                 }
 
-                return ours.lpItem();
             }
 
             int count = 0;
@@ -120,7 +129,7 @@ public class FlatCombiner<T> implements Combiner<T>{
                 Thread.onSpinWait();
             }
 
-            if (ours.laAge() == -1) list.casToHead(ours); //Re-append if we're dead
+            if (ours.loAge() == -1) list.casToHead(ours); //Re-append if we're dead
         }
 
         return ours.lpItem();
@@ -161,7 +170,7 @@ public class FlatCombiner<T> implements Combiner<T>{
            return loAction() == null;
         }
 
-        int laAge() {
+        int loAge() {
            return (int) AGE.getAcquire(this);
         }
 
@@ -217,7 +226,7 @@ public class FlatCombiner<T> implements Combiner<T>{
 
             for (; curr != null; curr = succ){
                 succ = curr.laNext();
-                if ((count - curr.laAge()) > threshold) {
+                if ((count - curr.loAge()) > threshold) {
                     prev.spNext(succ);
                     curr.soAge(-1);
                 } else {
@@ -234,7 +243,7 @@ public class FlatCombiner<T> implements Combiner<T>{
             var curr = lvHead();
             int i = 0, count = 0;
             for (; curr != null; curr = curr.laNext(), ++i){
-                if (curr.laAge() == -1) ++count;
+                if (curr.loAge() == -1) ++count;
             }
 
             return count;
