@@ -6,7 +6,7 @@ The core idea of flat combining is the cost of obtaining a lock to a shared data
 
 ## Usage 
 This library exposes a `FlatCombiner` class through a `Combiner` interface and three sequential structures through their JDK interface that are quite competitive to inbuilt JDK concurrent structures.
-Threads awaiting their result block till their result is made visible
+Threads awaiting their result spin wait till their result is made visible
 
 - Using a raw combiner
 ```java
