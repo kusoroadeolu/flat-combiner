@@ -19,7 +19,6 @@ import org.openjdk.jol.info.ClassLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Objects;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
@@ -52,7 +51,7 @@ import java.util.function.Function;
 *
 * */
 public class FlatCombiner<T> implements Combiner<T>{
-    private final Lock lock;
+    private final ReentrantLock lock;
     private final ThreadLocal<Node<T, Object>> pNode;
     private final T item;
     private final PublicationQueue<T, Object> pubList;
@@ -74,11 +73,15 @@ public class FlatCombiner<T> implements Combiner<T>{
     }
 
 
-    @SuppressWarnings("unchecked")
     public <R>R combine(Function<T, R> action) {
+        return combine(action, WaitStrategy.yield());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <R> R combine(Function<T, R> action, WaitStrategy strategy) {
         Objects.requireNonNull(action);
         Node<T, R> ours = (Node<T, R>) pNode.get();
-        Lock l = lock;
+        ReentrantLock l = lock;
         PublicationQueue<T, R> list = (PublicationQueue<T, R>) pubList;
 
         //Ideally the paper pushes towards a plain write for the action field, I do believe it is under the assumption this write will be backed by the cas to head op when enqueueing,
@@ -130,7 +133,7 @@ public class FlatCombiner<T> implements Combiner<T>{
             int count = 0;
             while (++count < 100) {
                 if (ours.isApplied()) return ours.lpItem();
-                Thread.onSpinWait();
+                strategy.idle();
             }
 
             if (ours.loAge() == -1) list.casToHead(ours); //Re-append if we're dead

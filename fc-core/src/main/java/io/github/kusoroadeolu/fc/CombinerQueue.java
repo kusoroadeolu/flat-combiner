@@ -1,6 +1,9 @@
 package io.github.kusoroadeolu.fc;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Queue;
 
 class CombinerQueue<T> extends CombinerCollection<T> implements Queue<T> {
     private final Combiner<Queue<T>> combiner;
@@ -11,7 +14,6 @@ class CombinerQueue<T> extends CombinerCollection<T> implements Queue<T> {
     public CombinerQueue(Combiner<Queue<T>> combiner) {
         this.combiner = Objects.requireNonNull(combiner);
     }
-
 
     @Override
     public boolean offer(T t) {

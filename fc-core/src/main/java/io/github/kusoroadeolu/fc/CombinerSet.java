@@ -1,9 +1,13 @@
 package io.github.kusoroadeolu.fc;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 class CombinerSet<T> extends CombinerCollection<T> implements Set<T> {
     private final Combiner<Set<T>> combiner;
+
     public CombinerSet() {
         this(new FlatCombiner<>(new HashSet<>()));
     }

@@ -4,5 +4,5 @@ import java.util.function.Function;
 
 public interface Combiner<T> {
     <R>R combine(Function<T, R> action);
-
+    <R>R combine(Function<T, R> action, WaitStrategy strategy);
 }
