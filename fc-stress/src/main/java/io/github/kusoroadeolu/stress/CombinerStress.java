@@ -6,8 +6,6 @@ import org.openjdk.jcstress.annotations.*;
 import org.openjdk.jcstress.infra.results.III_Result;
 import org.openjdk.jcstress.infra.results.I_Result;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Queue;
 
 public class CombinerStress {

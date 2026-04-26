@@ -80,12 +80,15 @@ public class FlatCombiner<T> implements Combiner<T>{
         Node<T, R> ours = (Node<T, R>) pNode.get();
         Lock l = lock;
         PublicationQueue<T, R> list = (PublicationQueue<T, R>) pubList;
+
         //Ideally the paper pushes towards a plain write here, I do believe it is under the assumption this write will be backed by the cas to head op when enqueueing,
         // there's no HB visibility guarantee between this write being seen by the combiner if we use a plain write
         ours.spItem(null); //Ensure we don't write after we've published our action, could lead to a race condition where we overwrite if the combiner has already applied our action
         ours.soAction(action); //A release fence in the case we're still active in the queue. //Linearizability point where we are active if we're already on the queue
 
+
         if (ours.loAge() == -1) {
+
             list.casToHead(ours);
         }
 
@@ -93,10 +96,11 @@ public class FlatCombiner<T> implements Combiner<T>{
         while (!ours.isApplied()) { //Get acquire, item should always be visible if this is read
             if (l.tryLock()) {
                 try {
-                    if (ours.loAge() == -1) list.casToHead(ours);
+                    if (ours.lpAge() == -1) list.casToHead(ours); //Use a plain read here due to get_acquire/set_release guarantees from acquiring the lock
                     int combineCount = 0;
-                    Node<T, R> curr = list.lvHead();
-                    T item = this.item;
+                    Node<T, R> h = list.lvHead();
+                    Node<T, R> curr = h;
+
                     int mcp = maxCombinePass;
                     int pt = pruneThreshold;
                     ++combinePass;
@@ -104,9 +108,7 @@ public class FlatCombiner<T> implements Combiner<T>{
                         var a =  curr.loAction();
                         if (a != null) {
                             ++combineCount;
-                            curr.spItem(a.apply(item)); //Plain write to the node's result, always backed
-                            curr.spAge(combinePass); //Doesn't need to be a volatile write since only the combiner ever reads it
-                            curr.soAction(null);
+                            apply(curr, a);
                         }
 
                         curr = curr.laNext();
@@ -116,7 +118,10 @@ public class FlatCombiner<T> implements Combiner<T>{
                         list.detachOldNodes(combinePass, pt);
                     }
 
-                   if (ours.isApplied()) return ours.lpItem();
+                    if (!ours.isAppliedPlain())
+                        apply(ours, ours.lpAction()); //Plain reads and writes here since we're writing to our own thread
+
+                    return ours.lpItem(); //We need an acquire read here, but why?
                 }finally {
                     l.unlock();
                 }
@@ -135,6 +140,12 @@ public class FlatCombiner<T> implements Combiner<T>{
         return ours.lpItem();
     }
 
+    <R>void apply(Node<T, R> node, Function<T, R> a) {
+        node.spItem(a.apply(item)); //Plain write to the node's result, always backed
+        node.spAge(combinePass); //Doesn't need to be a volatile write since only the combiner ever reads it
+        node.soAction(null);
+    }
+
 
     //For stress tests
     public int deadNodeCount(){
@@ -144,7 +155,6 @@ public class FlatCombiner<T> implements Combiner<T>{
     public boolean canReachTail(){
         return pubList.canReachTail();
     }
-
 
     @SuppressWarnings("unchecked")
     static class Node<T, R>{
@@ -170,8 +180,16 @@ public class FlatCombiner<T> implements Combiner<T>{
            return loAction() == null;
         }
 
+        boolean isAppliedPlain(){
+            return ACTION.get(this) == null;
+        }
+
         int loAge() {
            return (int) AGE.getAcquire(this);
+        }
+
+        int lpAge() {
+            return (int) AGE.get(this);
         }
 
         void soAge(int a){
@@ -198,6 +216,19 @@ public class FlatCombiner<T> implements Combiner<T>{
             return (Function<T, R>) ACTION.getAcquire(this);
         }
 
+        Function<T, R> lpAction(){
+            return (Function<T, R>) ACTION.get(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Node[" +
+                    "action=" + action +
+                    ", age=" + age +
+                    ", next=" + next +
+                    ", item=" + item +
+                    ']';
+        }
     }
 
 
@@ -214,8 +245,11 @@ public class FlatCombiner<T> implements Combiner<T>{
             do {
                 next = lvHead();
                 node.spNext(next); //Backed by volatile write, if it succeeds
-                node.spAge(Integer.MAX_VALUE); //Dummy age to avoid getting re pruned immediately, this will be reset by the combiner. Plain write is backed by a volatile cas
+                node.spAge(Integer.MAX_VALUE); //Dummy age to avoid getting re pruned immediately, this will be reset by the combiner.
+                // Plain write is backed by a volatile cas
+
             }while (!HEAD.compareAndSet(this, next, node));
+
         }
 
         //We want to prune old nodes, we have to avoid modifying the head, this should only be accessed by one thread at a time
@@ -247,6 +281,13 @@ public class FlatCombiner<T> implements Combiner<T>{
             }
 
             return count;
+        }
+
+        public boolean assertOursInQueue(Node<T, R> curr, Node<T, R> ours) {
+            for (; curr != null; curr = curr.laNext()){
+                if (curr == ours) return true;
+            }
+            return false;
         }
 
         public boolean canReachTail(){
