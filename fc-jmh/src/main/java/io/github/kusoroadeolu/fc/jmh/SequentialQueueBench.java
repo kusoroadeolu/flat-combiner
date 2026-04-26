@@ -55,33 +55,33 @@ public class SequentialQueueBench {
 
     @Setup
     public void setup() {
-        queue = Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 1000));
+        queue = type.equals("JDK") ? new ConcurrentLinkedQueue<>() : Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 1000));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 
-//    @Threads(2)
-//    @Benchmark
-//    public void twoThreads(Blackhole bh, ThreadState ts) {
-//        addOrRemove(bh, ts);
-//    }
-//
-//    @Threads(4)
-//    @Benchmark
-//    public void fourThreads(Blackhole bh, ThreadState ts) {
-//        addOrRemove(bh, ts);
-//    }
-//
-//    @Threads(8)
-//    @Benchmark
-//    public void eightThreads(Blackhole bh, ThreadState ts) {
-//        addOrRemove(bh, ts);
-//    }
-//
-//    @Threads(16)
-//    @Benchmark
-//    public void sixteenThreads(Blackhole bh, ThreadState ts) {
-//        addOrRemove(bh, ts);
-//    }
+    @Threads(2)
+    @Benchmark
+    public void twoThreads(Blackhole bh, ThreadState ts) {
+        addOrRemove(bh, ts);
+    }
+
+    @Threads(4)
+    @Benchmark
+    public void fourThreads(Blackhole bh, ThreadState ts) {
+        addOrRemove(bh, ts);
+    }
+
+    @Threads(8)
+    @Benchmark
+    public void eightThreads(Blackhole bh, ThreadState ts) {
+        addOrRemove(bh, ts);
+    }
+
+    @Threads(16)
+    @Benchmark
+    public void sixteenThreads(Blackhole bh, ThreadState ts) {
+        addOrRemove(bh, ts);
+    }
 
     @Threads(32)
     @Benchmark
