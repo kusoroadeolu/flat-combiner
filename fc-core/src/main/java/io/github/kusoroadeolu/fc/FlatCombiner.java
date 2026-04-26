@@ -110,7 +110,7 @@ public class FlatCombiner<T> implements Combiner<T>{
                             apply(curr, a);
                         }
 
-                        curr = curr.laNext();
+                        curr = curr.loNext();
                     }
 
                     if (combinePass != 0 && combinePass % pt == 0) {
@@ -171,7 +171,7 @@ public class FlatCombiner<T> implements Combiner<T>{
             return (Node<T, R>) NEXT.get(this);
         }
 
-        Node<T, R> laNext(){
+        Node<T, R> loNext(){
            return  (Node<T, R>) NEXT.getAcquire(this);
         }
 
@@ -258,7 +258,7 @@ public class FlatCombiner<T> implements Combiner<T>{
             Node<T, R> curr = prev.lpNext(), succ;
 
             for (; curr != null; curr = succ){
-                succ = curr.laNext();
+                succ = curr.loNext();
                 if ((count - curr.loAge()) > threshold) {
                     prev.spNext(succ);
                     curr.soAge(-1);
@@ -275,7 +275,7 @@ public class FlatCombiner<T> implements Combiner<T>{
         public int countDeadNodes(){
             var curr = lvHead();
             int i = 0, count = 0;
-            for (; curr != null; curr = curr.laNext(), ++i){
+            for (; curr != null; curr = curr.loNext(), ++i){
                 if (curr.loAge() == -1) ++count;
             }
 
@@ -283,7 +283,7 @@ public class FlatCombiner<T> implements Combiner<T>{
         }
 
         public boolean assertOursInQueue(Node<T, R> curr, Node<T, R> ours) {
-            for (; curr != null; curr = curr.laNext()){
+            for (; curr != null; curr = curr.loNext()){
                 if (curr == ours) return true;
             }
             return false;
@@ -292,7 +292,7 @@ public class FlatCombiner<T> implements Combiner<T>{
         public boolean canReachTail(){
             var curr = lvHead();
             int steps = 0;
-            for (;  curr != null; curr = curr.laNext()) {
+            for (;  curr != null; curr = curr.loNext()) {
                 if (++steps > 1000) return false;
 
             }
