@@ -132,7 +132,7 @@ public class WaitStrategyBench {
     static class Runner {
         static void main() throws RunnerException {
             Options options = new OptionsBuilder()
-                    .include(SequentialQueueBench.class.getSimpleName())
+                    .include(WaitStrategyBench.class.getSimpleName())
                     .addProfiler(JavaFlightRecorderProfiler.class, "dir=C:\\jfr-fc")
                     .build();
             new org.openjdk.jmh.runner.Runner(options).run();

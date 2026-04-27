@@ -20,17 +20,18 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 
 /*
-* Benchmark                                     Mode  Cnt  Score   Error   Units
-PriorityQueueBench.eightThreads      thrpt   45  7.028 ± 1.065  ops/us
-PriorityQueueBench.fourThreads       thrpt   45  7.277 ± 0.994  ops/us
-PriorityQueueBench.sixteenThreads    thrpt   45  6.761 ± 1.091  ops/us
-PriorityQueueBench.thirtyTwoThreads  thrpt   45  6.471 ± 1.084  ops/us
-PriorityQueueBench.twoThreads        thrpt   45  6.301 ± 0.790  ops/us
-*
-*
-*
+* Benchmark                                                            (type)   Mode  Cnt   Score   Error   Units
+PriorityQueueBench.eightThreads                                         JDK  thrpt   45   7.738 ± 0.469  ops/us
+PriorityQueueBench.eightThreads                                    Combiner  thrpt   45   9.667 ± 0.164  ops/us
+PriorityQueueBench.fourThreads                                          JDK  thrpt   45   8.387 ± 0.493  ops/us
+PriorityQueueBench.fourThreads                                     Combiner  thrpt   45   9.904 ± 0.284  ops/us
+PriorityQueueBench.sixteenThreads                                       JDK  thrpt   45   7.534 ± 0.755  ops/us
+PriorityQueueBench.sixteenThreads                                  Combiner  thrpt   45   9.111 ± 0.223  ops/us
+PriorityQueueBench.thirtyTwoThreads                                     JDK  thrpt   45   7.136 ± 0.801  ops/us
+PriorityQueueBench.thirtyTwoThreads                                Combiner  thrpt   45   8.527 ± 0.193  ops/us
+PriorityQueueBench.twoThreads                                           JDK  thrpt   45   7.586 ± 0.632  ops/us
+PriorityQueueBench.twoThreads                                      Combiner  thrpt   45   9.735 ± 0.128  ops/us
 * */
-
 public class PriorityQueueBench {
     private Queue<Integer> queue;
 

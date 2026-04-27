@@ -32,7 +32,19 @@ SequentialSetBench.twoThreads             JDK  thrpt   45  15.818 ± 0.575  ops/
 SequentialSetBench.twoThreads        Combiner  thrpt   45  17.243 ± 0.338  ops/us
 * */
 
-//Run with \ WaitStrategy#SpinWait
+/* latency
+* Benchmark                              (type)  Mode  Cnt  Score   Error  Units
+SequentialSetBench.eightThreads           JDK  avgt   45  0.704 ± 0.013  us/op
+SequentialSetBench.eightThreads      Combiner  avgt   45  0.525 ± 0.013  us/op
+SequentialSetBench.fourThreads            JDK  avgt   45  0.340 ± 0.003  us/op
+SequentialSetBench.fourThreads       Combiner  avgt   45  0.314 ± 0.043  us/op
+SequentialSetBench.sixteenThreads         JDK  avgt   45  1.444 ± 0.028  us/op
+SequentialSetBench.sixteenThreads    Combiner  avgt   45  1.121 ± 0.043  us/op
+SequentialSetBench.thirtyTwoThreads       JDK  avgt   45  2.966 ± 0.050  us/op
+SequentialSetBench.thirtyTwoThreads  Combiner  avgt   45  2.524 ± 0.133  us/op
+SequentialSetBench.twoThreads             JDK  avgt   45  0.127 ± 0.004  us/op
+SequentialSetBench.twoThreads        Combiner  avgt   45  0.133 ± 0.013  us/op
+* */
 
 public class SequentialSetBench {
 

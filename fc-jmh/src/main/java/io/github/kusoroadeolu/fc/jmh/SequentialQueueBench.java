@@ -38,6 +38,21 @@ SequentialQueueBench.thirtyTwoThreads  Combiner  thrpt   45  18.279 ± 0.630  op
 SequentialQueueBench.twoThreads             JDK  thrpt   45  12.736 ± 0.561  ops/us
 SequentialQueueBench.twoThreads        Combiner  thrpt   45  19.331 ± 0.371  ops/us
 * */
+
+/*
+* Latency
+* Benchmark                                (type)  Mode  Cnt  Score   Error  Units
+SequentialQueueBench.eightThreads           JDK  avgt   45  0.824 ± 0.014  us/op
+SequentialQueueBench.eightThreads      Combiner  avgt   45  0.454 ± 0.010  us/op
+SequentialQueueBench.fourThreads            JDK  avgt   45  0.441 ± 0.005  us/op
+SequentialQueueBench.fourThreads       Combiner  avgt   45  0.255 ± 0.027  us/op
+SequentialQueueBench.sixteenThreads         JDK  avgt   45  1.595 ± 0.016  us/op
+SequentialQueueBench.sixteenThreads    Combiner  avgt   45  1.517 ± 0.126  us/op
+SequentialQueueBench.thirtyTwoThreads       JDK  avgt   45  3.156 ± 0.103  us/op
+SequentialQueueBench.thirtyTwoThreads  Combiner  avgt   45  2.937 ± 0.473  us/op
+SequentialQueueBench.twoThreads             JDK  avgt   45  0.175 ± 0.011  us/op
+SequentialQueueBench.twoThreads        Combiner  avgt   45  0.122 ± 0.011  us/op
+* */
 public class SequentialQueueBench {
 
     private Queue<Integer> queue;
