@@ -11,24 +11,24 @@ public final class Combiners {
         return new CombinerSet<>();
     }
 
-    public static <T> Set<T> set(Combiner<Set<T>> combiner){
-        return new CombinerSet<>(combiner);
+    public static <T> Set<T> set(Combiner<Set<T>> combiner, WaitStrategy waitStrategy){
+        return new CombinerSet<>(combiner, waitStrategy);
     }
 
     public static <T> Queue<T> queue(){
         return new CombinerQueue<>();
     }
 
-    public static <T> Queue<T> queue(Combiner<Queue<T>> combiner){
-        return new CombinerQueue<>(combiner);
+    public static <T> Queue<T> queue(Combiner<Queue<T>> combiner, WaitStrategy waitStrategy){
+        return new CombinerQueue<>(combiner, waitStrategy);
     }
 
     public static <T> List<T> list(){
         return new CombinerList<>();
     }
 
-    public static <T> List<T> list(Combiner<List<T>> combiner){
-        return new CombinerList<>(combiner);
+    public static <T> List<T> list(Combiner<List<T>> combiner, WaitStrategy waitStrategy){
+        return new CombinerList<>(combiner, waitStrategy);
     }
 
 

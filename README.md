@@ -34,7 +34,11 @@ Threads awaiting their result spin wait till their result is made visible
 
 ## Benchmarks
 This project is benchmarked using **JMH**. It includes benchmarks against the inbuilt JDK implementations for lock-free/lock-based `<= O(N)` structures.
-The results are competitive against the JDK implementations up to number of threads = no. of available CPU cores.
+
+The benchmarks are recorded using the park `WaitStrategy` for a total park time of 1 nanosecond, prune threshold as 500 and max combining pass as 20. These show the best performance of all params tested overall and 
+perform similarly and sometimes better than the built-in JDK concurrent implementations.
+
+The results using spin wait / yield `WaitStrategy` are competitive against the JDK implementations up to number of threads = no. of available CPU cores.
 
 ### Running the benchmarks
 You can run all the benchmarks as so.
@@ -56,7 +60,7 @@ You can run all the JCStress tests as so.
 ```
 
 ### Potential Improvements
-There is still room for the improvement of this implementation regarding performance especially the linear scan in the publication queue
+As per profiling, the core CPU bottlenecks seem unavoidable. They include fetching a node from the thread local field, applying a function to the shared item, and the combiner loading an action with a get_acquire fence in its apply loop.
 
 ## LICENSE
 MIT

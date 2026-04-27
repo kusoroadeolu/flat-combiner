@@ -4,6 +4,9 @@ import io.github.kusoroadeolu.fc.Combiner;
 import io.github.kusoroadeolu.fc.FlatCombiner;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.PriorityQueue;
 import java.util.concurrent.ThreadLocalRandom;
@@ -96,7 +99,7 @@ CombinerPriorityQueueBench.twoThreads:totalOps              thrpt   45   7.240 Â
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
-@Measurement(iterations = 15, time = 1)
+@Measurement(iterations = 5, time = 1)
 @Fork(3)
 public class CombinerPriorityQueueBench {
 
@@ -107,50 +110,89 @@ public class CombinerPriorityQueueBench {
         boolean insert = true;
     }
 
+    @AuxCounters
+    @State(Scope.Thread)
+    public static class BatchCounters {
+        public long totalOps;
+        public long totalBatchSize;
+        public long batchSize1;
+        public long batchSize2to5;
+        public long batchSize6to20;
+        public long batchSize21to50;
+        public long batchSizeOver50;
+
+        public double avgBatchSize() {
+            return totalOps == 0 ? 0 : (double) totalBatchSize / totalOps;
+        }
+    }
+
     @Setup
     public void setup() {
-        PriorityQueue<Integer> pq = new PriorityQueue<>();
-        for (int i = 0; i < 1000; i++) pq.offer(i);
-        combiner = new FlatCombiner<>(pq);
+        PriorityQueue<Integer> queue = new PriorityQueue<>();
+        // Pre-fill so dequeues don't always hit empty
+        for (int i = 0; i < 1000; i++) queue.offer(i);
+        combiner = new FlatCombiner<>(queue);
     }
+
+    private void trackBatch(int batch, BatchCounters counters) {
+        counters.totalOps++;
+        if (batch > 0) {
+            counters.totalBatchSize += batch;
+            if (batch == 1)          counters.batchSize1++;
+            else if (batch <= 5)     counters.batchSize2to5++;
+            else if (batch <= 20)    counters.batchSize6to20++;
+            else if (batch <= 50)    counters.batchSize21to50++;
+            else                     counters.batchSizeOver50++;
+        }
+    }
+
+
 
     @Threads(2)
     @Benchmark
-    public void twoThreads(Blackhole bh, ThreadState ts) {
-        doWork(bh, ts);
+    public void twoThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
+        doWork(bh, ts, counters);
     }
 
     @Threads(4)
     @Benchmark
-    public void fourThreads(Blackhole bh, ThreadState ts) {
-        doWork(bh, ts);
+    public void fourThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
+        doWork(bh, ts, counters);
     }
 
     @Threads(8)
     @Benchmark
-    public void eightThreads(Blackhole bh, ThreadState ts) {
-        doWork(bh, ts);
+    public void eightThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
+        doWork(bh, ts, counters);
     }
 
     @Threads(16)
     @Benchmark
-    public void sixteenThreads(Blackhole bh, ThreadState ts) {
-        doWork(bh, ts);
+    public void sixteenThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
+        doWork(bh, ts, counters);
     }
 
     @Threads(32)
     @Benchmark
-    public void thirtyTwoThreads(Blackhole bh, ThreadState ts) {
-        doWork(bh, ts);
+    public void thirtyTwoThreads(Blackhole bh, ThreadState ts, BatchCounters counters) {
+        doWork(bh, ts, counters);
     }
 
-    private void doWork(Blackhole bh, ThreadState ts) {
+    private void doWork(Blackhole bh, ThreadState ts, BatchCounters counters) {
         boolean isInsert = ts.insert;
         ts.insert = !isInsert;
         Object batch;
         if (isInsert) batch = combiner.combine(pq -> pq.offer(ThreadLocalRandom.current().nextInt(10_000)));
         else batch = combiner.combine(PriorityQueue::poll);
+//        trackBatch(batch, counters);
         bh.consume(batch);
+    }
+
+    static class Runner {
+        static void main() throws RunnerException {
+            Options options = new OptionsBuilder().include(CombinerPriorityQueueBench.class.getSimpleName()).build();
+            new org.openjdk.jmh.runner.Runner(options).run();
+        }
     }
 
 }

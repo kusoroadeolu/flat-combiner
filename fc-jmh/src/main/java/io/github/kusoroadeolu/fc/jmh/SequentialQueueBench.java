@@ -2,8 +2,10 @@ package io.github.kusoroadeolu.fc.jmh;
 
 import io.github.kusoroadeolu.fc.Combiners;
 import io.github.kusoroadeolu.fc.FlatCombiner;
+import io.github.kusoroadeolu.fc.WaitStrategy;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.profile.JavaFlightRecorderProfiler;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
@@ -14,33 +16,27 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 15, time = 1)
 @Fork(3)
 
-//Baseline bench as per the paper, measures flat combining approach against a lock free linear structure
-/* Thrpt
-Benchmark                                (type)   Mode  Cnt   Score   Error   Units
-SequentialQueueBench.fourThreads            JDK  thrpt   45   9.707 ± 0.194  ops/us
-SequentialQueueBench.fourThreads       Combiner  thrpt   45   9.079 ± 0.492  ops/us
-SequentialQueueBench.sixteenThreads         JDK  thrpt   45  11.475 ± 0.213  ops/us
-SequentialQueueBench.sixteenThreads    Combiner  thrpt   45   5.369 ± 0.444  ops/us
-SequentialQueueBench.thirtyTwoThreads       JDK  thrpt   45  11.217 ± 0.084  ops/us
-SequentialQueueBench.thirtyTwoThreads  Combiner  thrpt   45   2.425 ± 0.365  ops/us
-SequentialQueueBench.twoThreads             JDK  thrpt   45  13.223 ± 0.389  ops/us
-SequentialQueueBench.twoThreads        Combiner  thrpt   45   9.692 ± 0.476  ops/us
-SequentialQueueBench.eightThreads       JDK  thrpt   45  11.777 ± 0.066  ops/us
-SequentialQueueBench.eightThreads  Combiner  thrpt   45  11.185 ± 0.319  ops/us
-* */
+//Measures flat combining with a park wait strategy against the JDK lock free linear queue
 
-/* Latency
-* Benchmark                  Mode  Cnt  Score   Error  Units
-SequentialQueueBench.eightThreads  avgt   45  0.783 ± 0.008  us/op
-SequentialQueueBench.fourThreads   avgt   45  0.445 ± 0.009  us/op
-SequentialQueueBench.twoThreads    avgt   45  0.159 ± 0.005  us/op
+/*
+* Benchmark                                (type)   Mode  Cnt   Score   Error   Units
+SequentialQueueBench.eightThreads           JDK  thrpt   45   9.952 ± 0.155  ops/us
+SequentialQueueBench.eightThreads      Combiner  thrpt   45  18.323 ± 0.471  ops/us
+SequentialQueueBench.fourThreads            JDK  thrpt   45   8.936 ± 0.149  ops/us
+SequentialQueueBench.fourThreads       Combiner  thrpt   45  19.462 ± 0.451  ops/us
+SequentialQueueBench.sixteenThreads         JDK  thrpt   45  10.234 ± 0.094  ops/us
+SequentialQueueBench.sixteenThreads    Combiner  thrpt   45  18.456 ± 0.627  ops/us
+SequentialQueueBench.thirtyTwoThreads       JDK  thrpt   45  10.337 ± 0.097  ops/us
+SequentialQueueBench.thirtyTwoThreads  Combiner  thrpt   45  18.279 ± 0.630  ops/us
+SequentialQueueBench.twoThreads             JDK  thrpt   45  12.736 ± 0.561  ops/us
+SequentialQueueBench.twoThreads        Combiner  thrpt   45  19.331 ± 0.371  ops/us
 * */
 public class SequentialQueueBench {
 
@@ -53,9 +49,10 @@ public class SequentialQueueBench {
         boolean enqueue = true;
     }
 
+
     @Setup
     public void setup() {
-        queue = type.equals("JDK") ? new ConcurrentLinkedQueue<>() : Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 1000));
+        queue = type.equals("JDK") ? new ConcurrentLinkedQueue<>() : Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 500), WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 
@@ -98,7 +95,10 @@ public class SequentialQueueBench {
 
     static class Runner {
         static void main() throws RunnerException {
-            Options options = new OptionsBuilder().include(SequentialQueueBench.class.getSimpleName()).build();
+            Options options = new OptionsBuilder()
+                    .include(SequentialQueueBench.class.getSimpleName())
+                    .addProfiler(JavaFlightRecorderProfiler.class, "dir=C:\\jfr-fc")
+                    .build();
             new org.openjdk.jmh.runner.Runner(options).run();
         }
     }

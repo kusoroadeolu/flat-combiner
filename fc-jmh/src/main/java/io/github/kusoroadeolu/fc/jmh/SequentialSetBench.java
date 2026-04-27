@@ -2,6 +2,7 @@ package io.github.kusoroadeolu.fc.jmh;
 
 import io.github.kusoroadeolu.fc.Combiners;
 import io.github.kusoroadeolu.fc.FlatCombiner;
+import io.github.kusoroadeolu.fc.WaitStrategy;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -10,7 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
@@ -19,17 +20,20 @@ import java.util.concurrent.TimeUnit;
 
 /*
 * Benchmark                              (type)   Mode  Cnt   Score   Error   Units
-SequentialSetBench.eightThreads           JDK  thrpt   45  12.063 ± 0.234  ops/us
-SequentialSetBench.eightThreads      Combiner  thrpt   45   8.898 ± 0.238  ops/us
-SequentialSetBench.fourThreads            JDK  thrpt   45  12.354 ± 0.146  ops/us
-SequentialSetBench.fourThreads       Combiner  thrpt   45   8.732 ± 0.663  ops/us
-SequentialSetBench.sixteenThreads         JDK  thrpt   45  12.663 ± 0.078  ops/us
-SequentialSetBench.sixteenThreads    Combiner  thrpt   45   3.617 ± 0.278  ops/us
-SequentialSetBench.thirtyTwoThreads       JDK  thrpt   45  12.360 ± 0.229  ops/us
-SequentialSetBench.thirtyTwoThreads  Combiner  thrpt   45   1.688 ± 0.251  ops/us
-SequentialSetBench.twoThreads             JDK  thrpt   45  16.548 ± 0.414  ops/us
-SequentialSetBench.twoThreads        Combiner  thrpt   45   7.234 ± 0.212  ops/us
+SequentialSetBench.eightThreads           JDK  thrpt   45  10.898 ± 0.267  ops/us
+SequentialSetBench.eightThreads      Combiner  thrpt   45  16.514 ± 0.413  ops/us
+SequentialSetBench.fourThreads            JDK  thrpt   45  11.207 ± 0.149  ops/us
+SequentialSetBench.fourThreads       Combiner  thrpt   45  16.777 ± 0.603  ops/us
+SequentialSetBench.sixteenThreads         JDK  thrpt   45  10.913 ± 0.124  ops/us
+SequentialSetBench.sixteenThreads    Combiner  thrpt   45  15.916 ± 0.539  ops/us
+SequentialSetBench.thirtyTwoThreads       JDK  thrpt   45  10.803 ± 0.165  ops/us
+SequentialSetBench.thirtyTwoThreads  Combiner  thrpt   45  15.833 ± 0.503  ops/us
+SequentialSetBench.twoThreads             JDK  thrpt   45  15.818 ± 0.575  ops/us
+SequentialSetBench.twoThreads        Combiner  thrpt   45  17.243 ± 0.338  ops/us
 * */
+
+//Run with \ WaitStrategy#SpinWait
+
 public class SequentialSetBench {
 
     private Set<Integer> set;
@@ -43,7 +47,7 @@ public class SequentialSetBench {
 
     @Setup
     public void setup() {
-        set = type.equals("JDK") ? ConcurrentHashMap.newKeySet() : Combiners.set(new FlatCombiner<>(new HashSet<>(), 20, 1000));
+        set = type.equals("JDK") ? ConcurrentHashMap.newKeySet() : Combiners.set(new FlatCombiner<>(new HashSet<>(), 20, 500), WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) set.add(i);
     }
 

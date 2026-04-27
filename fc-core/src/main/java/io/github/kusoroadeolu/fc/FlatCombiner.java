@@ -74,7 +74,7 @@ public class FlatCombiner<T> implements Combiner<T>{
 
 
     public <R>R combine(Function<T, R> action) {
-        return combine(action, WaitStrategy.yield());
+        return combine(action, WaitStrategy.park(1));
     }
 
     @SuppressWarnings("unchecked")
@@ -85,7 +85,7 @@ public class FlatCombiner<T> implements Combiner<T>{
         PublicationQueue<T, R> list = (PublicationQueue<T, R>) pubList;
 
         //Ideally the paper pushes towards a plain write for the action field, I do believe it is under the assumption this write will be backed by the cas to head op when enqueueing,
-        // there's no HB visibility guarantee between this write being seen by the combiner if we use a plain write
+        // there's no ordering guarantee between this write being seen by the combiner if we use a plain write
         ours.spItem(null); //Ensure we don't write after we've published our action, could lead to a race condition where we overwrite if the combiner has already applied our action
         ours.soAction(action); //A release fence in the case we're still active in the queue. //Linearizability point where we are active if we're already on the queue
 
@@ -108,6 +108,7 @@ public class FlatCombiner<T> implements Combiner<T>{
                     ++combinePass;
                     while (curr != null && combineCount < mcp) {
                         var a =  curr.loAction();
+
                         if (a != null) {
                             ++combineCount;
                             apply(curr, a);
@@ -166,7 +167,7 @@ public class FlatCombiner<T> implements Combiner<T>{
         R item;
 
         //Set plain, will be backed by a volatile cas
-        public void spNext(Node<T, R> node) {
+        void spNext(Node<T, R> node) {
             NEXT.set(this, node);
         }
 
@@ -198,11 +199,11 @@ public class FlatCombiner<T> implements Combiner<T>{
             AGE.setRelease(this, a);
         }
 
-        public void spAge(int a){
+        void spAge(int a){
             AGE.set(this, a);
         }
 
-        public void spItem(R item){
+        void spItem(R item){
             this.item = item;
         }
 

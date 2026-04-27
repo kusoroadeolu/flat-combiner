@@ -2,6 +2,7 @@ package io.github.kusoroadeolu.fc.jmh;
 
 import io.github.kusoroadeolu.fc.Combiners;
 import io.github.kusoroadeolu.fc.FlatCombiner;
+import io.github.kusoroadeolu.fc.WaitStrategy;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -28,7 +29,6 @@ PriorityQueueBench.twoThreads        thrpt   45  6.301 ± 0.790  ops/us
 *
 *
 *
-* Performs significantly better than both flat combiners even though the err margins are a bit high
 * */
 
 public class PriorityQueueBench {
@@ -44,7 +44,8 @@ public class PriorityQueueBench {
 
     @Setup
     public void setup() {
-        queue = type.equals("JDK") ? new PriorityBlockingQueue<>() : Combiners.queue(new FlatCombiner<>(new PriorityQueue<>()));
+        Queue<Integer> pq = new PriorityQueue<>();
+        queue = type.equals("JDK") ? new PriorityBlockingQueue<>() : Combiners.queue(new FlatCombiner<>(pq),  WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 

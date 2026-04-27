@@ -5,7 +5,7 @@ import io.github.kusoroadeolu.fc.Combiner;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class LockCombiner<T> implements Combiner<T> {
+public class LockCombiner<T>  {
     private final Object lock;
     private final T item;
 
@@ -14,7 +14,6 @@ public class LockCombiner<T> implements Combiner<T> {
         this.item = Objects.requireNonNull(item);
     }
 
-    @Override
     public <R>R combine(Function<T, R> action) {
         synchronized (lock){
            return action.apply(item);
