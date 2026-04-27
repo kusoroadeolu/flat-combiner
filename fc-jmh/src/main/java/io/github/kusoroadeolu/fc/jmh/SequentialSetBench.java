@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
@@ -21,15 +21,15 @@ import java.util.concurrent.TimeUnit;
 /*
 * Benchmark                              (type)   Mode  Cnt   Score   Error   Units
 SequentialSetBench.eightThreads           JDK  thrpt   45  10.898 ± 0.267  ops/us
-SequentialSetBench.eightThreads      Combiner  thrpt   45  16.514 ± 0.413  ops/us
+SequentialSetBench.eightThreads      Combiner  thrpt   45  21.540 ± 0.567  ops/us
 SequentialSetBench.fourThreads            JDK  thrpt   45  11.207 ± 0.149  ops/us
-SequentialSetBench.fourThreads       Combiner  thrpt   45  16.777 ± 0.603  ops/us
+SequentialSetBench.fourThreads       Combiner  thrpt   45  21.476 ± 0.598  ops/us
 SequentialSetBench.sixteenThreads         JDK  thrpt   45  10.913 ± 0.124  ops/us
-SequentialSetBench.sixteenThreads    Combiner  thrpt   45  15.916 ± 0.539  ops/us
+SequentialSetBench.sixteenThreads    Combiner  thrpt   45  19.772 ± 0.773  ops/us
 SequentialSetBench.thirtyTwoThreads       JDK  thrpt   45  10.803 ± 0.165  ops/us
-SequentialSetBench.thirtyTwoThreads  Combiner  thrpt   45  15.833 ± 0.503  ops/us
+SequentialSetBench.thirtyTwoThreads  Combiner  thrpt   45  20.390 ± 0.456  ops/us
 SequentialSetBench.twoThreads             JDK  thrpt   45  15.818 ± 0.575  ops/us
-SequentialSetBench.twoThreads        Combiner  thrpt   45  17.243 ± 0.338  ops/us
+SequentialSetBench.twoThreads        Combiner  thrpt   45  20.929 ± 0.627  ops/us
 * */
 
 /* latency
@@ -49,7 +49,7 @@ SequentialSetBench.twoThreads        Combiner  avgt   45  0.133 ± 0.013  us/op
 public class SequentialSetBench {
 
     private Set<Integer> set;
-    @Param({"JDK", "Combiner"})
+    //@Param({"JDK", "Combiner"})
     private String type;
 
     @State(Scope.Thread)
@@ -59,7 +59,7 @@ public class SequentialSetBench {
 
     @Setup
     public void setup() {
-        set = type.equals("JDK") ? ConcurrentHashMap.newKeySet() : Combiners.set(new FlatCombiner<>(new HashSet<>(), 20, 500), WaitStrategy.park(1));
+        set = /**type.equals("JDK") ? ConcurrentHashMap.newKeySet() :*/ Combiners.set(new FlatCombiner<>(new HashSet<>(), 20, 500), WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) set.add(i);
     }
 

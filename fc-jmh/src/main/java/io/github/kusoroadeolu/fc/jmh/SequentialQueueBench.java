@@ -6,17 +6,15 @@ import io.github.kusoroadeolu.fc.WaitStrategy;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.profile.JavaFlightRecorderProfiler;
-import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
@@ -25,18 +23,20 @@ import java.util.concurrent.TimeUnit;
 
 //Measures flat combining with a park wait strategy against the JDK lock free linear queue
 
+
+//Re entrant lock
 /*
 * Benchmark                                (type)   Mode  Cnt   Score   Error   Units
 SequentialQueueBench.eightThreads           JDK  thrpt   45   9.952 ± 0.155  ops/us
-SequentialQueueBench.eightThreads      Combiner  thrpt   45  18.323 ± 0.471  ops/us
+SequentialQueueBench.eightThreads      Combiner  thrpt   45  25.189 ± 1.086  ops/us
 SequentialQueueBench.fourThreads            JDK  thrpt   45   8.936 ± 0.149  ops/us
-SequentialQueueBench.fourThreads       Combiner  thrpt   45  19.462 ± 0.451  ops/us
+SequentialQueueBench.fourThreads       Combiner  thrpt   45  24.848 ± 0.475  ops/us
 SequentialQueueBench.sixteenThreads         JDK  thrpt   45  10.234 ± 0.094  ops/us
-SequentialQueueBench.sixteenThreads    Combiner  thrpt   45  18.456 ± 0.627  ops/us
+SequentialQueueBench.sixteenThreads    Combiner  thrpt   45  24.852 ± 0.979  ops/us
 SequentialQueueBench.thirtyTwoThreads       JDK  thrpt   45  10.337 ± 0.097  ops/us
-SequentialQueueBench.thirtyTwoThreads  Combiner  thrpt   45  18.279 ± 0.630  ops/us
+SequentialQueueBench.thirtyTwoThreads  Combiner  thrpt   45  24.176 ± 0.798  ops/us
 SequentialQueueBench.twoThreads             JDK  thrpt   45  12.736 ± 0.561  ops/us
-SequentialQueueBench.twoThreads        Combiner  thrpt   45  19.331 ± 0.371  ops/us
+SequentialQueueBench.twoThreads        Combiner  thrpt   45  26.168 ± 0.333  ops/us
 * */
 
 /*
@@ -56,7 +56,7 @@ SequentialQueueBench.twoThreads        Combiner  avgt   45  0.122 ± 0.011  us/o
 public class SequentialQueueBench {
 
     private Queue<Integer> queue;
-    @Param({"JDK", "Combiner"})
+    // @Param({"JDK", "Combiner"})
     private String type;
 
     @State(Scope.Thread)
@@ -67,7 +67,7 @@ public class SequentialQueueBench {
 
     @Setup
     public void setup() {
-        queue = type.equals("JDK") ? new ConcurrentLinkedQueue<>() : Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 500), WaitStrategy.park(1));
+        queue = /*type.equals("JDK") ? new ConcurrentLinkedQueue<>() : */ Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 500), WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 

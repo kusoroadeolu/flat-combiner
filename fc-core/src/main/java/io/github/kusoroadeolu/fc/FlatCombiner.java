@@ -19,6 +19,7 @@ import org.openjdk.jol.info.ClassLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
@@ -51,7 +52,7 @@ import java.util.function.Function;
 *
 * */
 public class FlatCombiner<T> implements Combiner<T>{
-    private final ReentrantLock lock;
+    private final FCLock lock;
     private final ThreadLocal<Node<T, Object>> pNode;
     private final T item;
     private final PublicationQueue<T, Object> pubList;
@@ -60,7 +61,7 @@ public class FlatCombiner<T> implements Combiner<T>{
     private int combinePass;
 
     public FlatCombiner(T item, int combinePass, int pruneThreshold) {
-        this.lock = new ReentrantLock();
+        this.lock = new FCLock();
         this.pNode = ThreadLocal.withInitial(Node::new);
         this.item = Objects.requireNonNull(item);
         this.pubList = new PublicationQueue<>();
@@ -81,7 +82,7 @@ public class FlatCombiner<T> implements Combiner<T>{
     public <R> R combine(Function<T, R> action, WaitStrategy strategy) {
         Objects.requireNonNull(action);
         Node<T, R> ours = (Node<T, R>) pNode.get();
-        ReentrantLock l = lock;
+        FCLock l = lock;
         PublicationQueue<T, R> list = (PublicationQueue<T, R>) pubList;
 
         //Ideally the paper pushes towards a plain write for the action field, I do believe it is under the assumption this write will be backed by the cas to head op when enqueueing,
@@ -96,7 +97,7 @@ public class FlatCombiner<T> implements Combiner<T>{
 
         //Volatile read.
         while (!ours.isApplied()) { //Get acquire, item should always be visible if this is read
-            if (l.tryLock()) {
+            if (l.tryAcquire()) {
                 try {
                     if (ours.lpAge() == -1) list.casToHead(ours); //Use a plain read here due to get_acquire/set_release guarantees from acquiring the lock
                     int combineCount = 0;
@@ -126,7 +127,7 @@ public class FlatCombiner<T> implements Combiner<T>{
 
                     return ours.lpItem(); //We need an acquire read here, but why?
                 }finally {
-                    l.unlock();
+                    l.release();
                 }
 
             }
@@ -301,6 +302,27 @@ public class FlatCombiner<T> implements Combiner<T>{
 
             }
             return true;
+        }
+    }
+
+
+    static class FCLock {
+        static final int HELD = 1;
+        static final int FREE = 0;
+        private final AtomicInteger state;
+
+        public FCLock() {
+            this.state = new AtomicInteger();
+        }
+
+        boolean tryAcquire(){
+            var s = state;
+            return s.getAcquire() == FREE && s.compareAndSet(FREE, HELD);
+        }
+
+
+        void release(){
+            state.setRelease(FREE);
         }
     }
 

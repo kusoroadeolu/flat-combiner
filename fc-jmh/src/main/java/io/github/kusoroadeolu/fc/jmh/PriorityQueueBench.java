@@ -22,20 +22,21 @@ import java.util.concurrent.TimeUnit;
 /*
 * Benchmark                                                            (type)   Mode  Cnt   Score   Error   Units
 PriorityQueueBench.eightThreads                                         JDK  thrpt   45   7.738 ± 0.469  ops/us
-PriorityQueueBench.eightThreads                                    Combiner  thrpt   45   9.667 ± 0.164  ops/us
+PriorityQueueBench.eightThreads                                    Combiner  thrpt   45  11.236 ± 0.194  ops/us
 PriorityQueueBench.fourThreads                                          JDK  thrpt   45   8.387 ± 0.493  ops/us
-PriorityQueueBench.fourThreads                                     Combiner  thrpt   45   9.904 ± 0.284  ops/us
+PriorityQueueBench.fourThreads                                     Combiner  thrpt   45  11.473 ± 0.300  ops/us
 PriorityQueueBench.sixteenThreads                                       JDK  thrpt   45   7.534 ± 0.755  ops/us
-PriorityQueueBench.sixteenThreads                                  Combiner  thrpt   45   9.111 ± 0.223  ops/us
+PriorityQueueBench.sixteenThreads                                  Combiner  thrpt   45  10.284 ± 0.325  ops/us
 PriorityQueueBench.thirtyTwoThreads                                     JDK  thrpt   45   7.136 ± 0.801  ops/us
-PriorityQueueBench.thirtyTwoThreads                                Combiner  thrpt   45   8.527 ± 0.193  ops/us
+PriorityQueueBench.thirtyTwoThreads                                Combiner  thrpt   45   9.665 ± 0.224  ops/us
 PriorityQueueBench.twoThreads                                           JDK  thrpt   45   7.586 ± 0.632  ops/us
-PriorityQueueBench.twoThreads                                      Combiner  thrpt   45   9.735 ± 0.128  ops/us
+PriorityQueueBench.twoThreads                                      Combiner  thrpt   45  12.190 ± 0.228  ops/us
 * */
+
 public class PriorityQueueBench {
     private Queue<Integer> queue;
 
-    @Param({"JDK", "Combiner"})
+    //@Param({"JDK", "Combiner"})
     private String type;
 
     @State(Scope.Thread)
@@ -46,7 +47,7 @@ public class PriorityQueueBench {
     @Setup
     public void setup() {
         Queue<Integer> pq = new PriorityQueue<>();
-        queue = type.equals("JDK") ? new PriorityBlockingQueue<>() : Combiners.queue(new FlatCombiner<>(pq),  WaitStrategy.park(1));
+        queue = /*type.equals("JDK") ? new PriorityBlockingQueue<>() :*/ Combiners.queue(new FlatCombiner<>(pq),  WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 
