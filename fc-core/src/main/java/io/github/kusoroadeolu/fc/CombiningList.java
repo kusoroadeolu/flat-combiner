@@ -5,18 +5,18 @@ import java.util.*;
 /*
 * A list backed by a combiner
 * */
-class CombinerList<T> extends CombinerCollection<T> implements List<T>{
+class CombiningList<T> extends CombiningCollection<T> implements List<T>{
 
     private final Combiner<List<T>> combiner;
     private final WaitStrategy waitStrategy;
-    public CombinerList(Combiner<List<T>> combiner, WaitStrategy waitStrategy) {
+    public CombiningList(Combiner<List<T>> combiner, WaitStrategy waitStrategy) {
         this.combiner = Objects.requireNonNull(combiner);
         this.waitStrategy = Objects.requireNonNull(waitStrategy);
     }
 
 
 
-    public CombinerList() {
+    public CombiningList() {
         this(new FlatCombiner<>(new ArrayList<>()), WaitStrategy.park(1));
     }
 

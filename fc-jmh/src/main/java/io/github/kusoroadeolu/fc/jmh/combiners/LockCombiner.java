@@ -1,7 +1,5 @@
 package io.github.kusoroadeolu.fc.jmh.combiners;
 
-import io.github.kusoroadeolu.fc.Combiner;
-
 import java.util.Objects;
 import java.util.function.Function;
 

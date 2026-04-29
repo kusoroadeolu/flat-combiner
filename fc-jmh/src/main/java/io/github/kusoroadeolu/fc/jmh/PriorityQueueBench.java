@@ -36,7 +36,7 @@ PriorityQueueBench.twoThreads                                      Combiner  thr
 public class PriorityQueueBench {
     private Queue<Integer> queue;
 
-    //@Param({"JDK", "Combiner"})
+    @Param({"JDK", "Combiner"})
     private String type;
 
     @State(Scope.Thread)
@@ -47,7 +47,7 @@ public class PriorityQueueBench {
     @Setup
     public void setup() {
         Queue<Integer> pq = new PriorityQueue<>();
-        queue = /*type.equals("JDK") ? new PriorityBlockingQueue<>() :*/ Combiners.queue(new FlatCombiner<>(pq),  WaitStrategy.park(1));
+        queue = type.equals("JDK") ? new PriorityBlockingQueue<>() : Combiners.queue(new FlatCombiner<>(pq),  WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 

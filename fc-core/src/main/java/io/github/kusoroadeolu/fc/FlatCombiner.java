@@ -20,7 +20,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 /*
@@ -95,7 +94,6 @@ public class FlatCombiner<T> implements Combiner<T>{
             list.casToHead(ours);
         }
 
-        //Volatile read.
         while (!ours.isApplied()) { //Get acquire, item should always be visible if this is read
             if (l.tryAcquire()) {
                 try {
@@ -139,6 +137,7 @@ public class FlatCombiner<T> implements Combiner<T>{
             }
 
             if (ours.loAge() == -1) list.casToHead(ours); //Re-append if we're dead
+
         }
 
         return ours.lpItem();
@@ -313,6 +312,10 @@ public class FlatCombiner<T> implements Combiner<T>{
 
         public FCLock() {
             this.state = new AtomicInteger();
+        }
+
+        boolean isHeld(){
+            return state.get() == HELD;
         }
 
         boolean tryAcquire(){

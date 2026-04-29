@@ -59,7 +59,7 @@ public class SequentialSetBench {
 
     @Setup
     public void setup() {
-        set = /**type.equals("JDK") ? ConcurrentHashMap.newKeySet() :*/ Combiners.set(new FlatCombiner<>(new HashSet<>(), 20, 500), WaitStrategy.park(1));
+        set = type.equals("JDK") ? ConcurrentHashMap.newKeySet() : Combiners.set(new FlatCombiner<>(new HashSet<>(), 20, 500), WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) set.add(i);
     }
 

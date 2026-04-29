@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
-abstract class CombinerCollection<T> implements Collection<T> {
+public abstract class CombiningCollection<T> implements Collection<T> {
 
     @Override
     public final int size() {
@@ -71,7 +71,7 @@ abstract class CombinerCollection<T> implements Collection<T> {
         combiner().combine(l -> {
             l.clear();
             return null;
-        });
+        }, waitStrategy());
     }
 
 

@@ -12,6 +12,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
@@ -56,7 +57,7 @@ SequentialQueueBench.twoThreads        Combiner  avgt   45  0.122 ± 0.011  us/o
 public class SequentialQueueBench {
 
     private Queue<Integer> queue;
-    // @Param({"JDK", "Combiner"})
+    @Param({"JDK", "Combiner"})
     private String type;
 
     @State(Scope.Thread)
@@ -67,7 +68,7 @@ public class SequentialQueueBench {
 
     @Setup
     public void setup() {
-        queue = /*type.equals("JDK") ? new ConcurrentLinkedQueue<>() : */ Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 500), WaitStrategy.park(1));
+        queue = type.equals("JDK") ? new ConcurrentLinkedQueue<>() : Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 500), WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 

@@ -8,27 +8,27 @@ public final class Combiners {
     private Combiners(){}
 
     public static <T> Set<T> set(){
-        return new CombinerSet<>();
+        return new CombiningSet<>();
     }
 
     public static <T> Set<T> set(Combiner<Set<T>> combiner, WaitStrategy waitStrategy){
-        return new CombinerSet<>(combiner, waitStrategy);
+        return new CombiningSet<>(combiner, waitStrategy);
     }
 
     public static <T> Queue<T> queue(){
-        return new CombinerQueue<>();
+        return new CombiningQueue<>();
     }
 
     public static <T> Queue<T> queue(Combiner<Queue<T>> combiner, WaitStrategy waitStrategy){
-        return new CombinerQueue<>(combiner, waitStrategy);
+        return new CombiningQueue<>(combiner, waitStrategy);
     }
 
     public static <T> List<T> list(){
-        return new CombinerList<>();
+        return new CombiningList<>();
     }
 
     public static <T> List<T> list(Combiner<List<T>> combiner, WaitStrategy waitStrategy){
-        return new CombinerList<>(combiner, waitStrategy);
+        return new CombiningList<>(combiner, waitStrategy);
     }
 
 

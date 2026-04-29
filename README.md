@@ -35,7 +35,7 @@ Threads awaiting their result spin wait till their result is made visible
 ## Benchmarks
 This project is benchmarked using **JMH**. It includes benchmarks against the inbuilt JDK implementations for lock-free/lock-based `<= O(N)` structures.
 
-The benchmarks are recorded using the park `WaitStrategy` for a total park time of 1 nanosecond, prune threshold as 500 and max combining pass as 20. These show the best performance of all params tested overall and 
+The benchmarks are recorded using `WaitStrategy#park(1)`, prune threshold as 500 and max combining pass as 20. These show the best performance of all params tested overall and 
 perform similarly and sometimes better than the built-in JDK concurrent implementations.
 
 The results using spin wait / yield `WaitStrategy` are competitive against the JDK implementations up to number of threads = no. of available CPU cores.
