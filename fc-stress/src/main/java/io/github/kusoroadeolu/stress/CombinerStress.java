@@ -38,7 +38,7 @@ public class CombinerStress {
     }
 
     @JCStressTest
-    @Outcome(id = "1, 1, 1", expect = Expect.ACCEPTABLE, desc = "All visible")
+    @Outcome(id = "1, 1, 1", expect = Expect.ACCEPTABLE, desc = "All results visible")
     @State
     //Our result should never be null, though null can be a valid result irl, this is just a test to ensure our item is always visible
     public static class ResultVisibilityTest {
