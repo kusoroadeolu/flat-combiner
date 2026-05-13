@@ -36,7 +36,7 @@ public class LincheckTests {
     }
 
     @Test
-    public void dataLossTest() {
+    public void noLostWrites() {
         Lincheck.runConcurrentTest(() -> {
             var list = new ArrayList<Integer>();
             final Combiner<List<Integer>> combiner = new FlatCombiner<>(list);

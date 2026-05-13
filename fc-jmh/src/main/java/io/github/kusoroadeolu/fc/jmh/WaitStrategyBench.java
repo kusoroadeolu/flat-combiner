@@ -17,7 +17,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
@@ -28,22 +28,22 @@ import java.util.concurrent.TimeUnit;
 
 
 /*
-* Benchmark                           (strat)   Mode  Cnt   Score   Error   Units
-WaitStrategyBench.eightThreads         spin  thrpt   30  10.687 ± 0.678  ops/us
-WaitStrategyBench.eightThreads        yield  thrpt   30   6.296 ± 0.127  ops/us
-WaitStrategyBench.eightThreads         park  thrpt   30  19.236 ± 0.381  ops/us
-WaitStrategyBench.fourThreads          spin  thrpt   30   8.309 ± 0.762  ops/us
-WaitStrategyBench.fourThreads         yield  thrpt   30   8.745 ± 0.537  ops/us
-WaitStrategyBench.fourThreads          park  thrpt   30  19.555 ± 0.426  ops/us
-WaitStrategyBench.sixteenThreads       spin  thrpt   30   5.474 ± 0.557  ops/us
-WaitStrategyBench.sixteenThreads      yield  thrpt   30   5.913 ± 0.126  ops/us
-WaitStrategyBench.sixteenThreads       park  thrpt   30  19.670 ± 0.397  ops/us
-WaitStrategyBench.thirtyTwoThreads     spin  thrpt   30   2.426 ± 0.392  ops/us
-WaitStrategyBench.thirtyTwoThreads    yield  thrpt   30   5.046 ± 0.089  ops/us
-WaitStrategyBench.thirtyTwoThreads     park  thrpt   30  17.851 ± 0.997  ops/us
-WaitStrategyBench.twoThreads           spin  thrpt   30   8.958 ± 1.233  ops/us
-WaitStrategyBench.twoThreads          yield  thrpt   30  11.467 ± 0.447  ops/us
-WaitStrategyBench.twoThreads           park  thrpt   30  19.193 ± 0.473  ops/us
+Benchmark                           (strat)   Mode  Cnt   Score   Error   Units
+WaitStrategyBench.eightThreads         spin  thrpt   30  11.952 ± 0.295  ops/us
+WaitStrategyBench.eightThreads        yield  thrpt   30   8.101 ± 0.329  ops/us
+WaitStrategyBench.eightThreads         park  thrpt   30  25.489 ± 1.068  ops/us
+WaitStrategyBench.fourThreads          spin  thrpt   30  10.407 ± 0.794  ops/us
+WaitStrategyBench.fourThreads         yield  thrpt   30  10.787 ± 0.672  ops/us
+WaitStrategyBench.fourThreads          park  thrpt   30  27.009 ± 1.028  ops/us
+WaitStrategyBench.sixteenThreads       spin  thrpt   30   6.721 ± 1.167  ops/us
+WaitStrategyBench.sixteenThreads      yield  thrpt   30   7.329 ± 0.193  ops/us
+WaitStrategyBench.sixteenThreads       park  thrpt   30  26.142 ± 1.376  ops/us
+WaitStrategyBench.thirtyTwoThreads     spin  thrpt   30   3.654 ± 0.854  ops/us
+WaitStrategyBench.thirtyTwoThreads    yield  thrpt   30   5.898 ± 0.118  ops/us
+WaitStrategyBench.thirtyTwoThreads     park  thrpt   30  25.280 ± 0.980  ops/us
+WaitStrategyBench.twoThreads           spin  thrpt   30  10.931 ± 1.269  ops/us
+WaitStrategyBench.twoThreads          yield  thrpt   30  15.552 ± 0.855  ops/us
+WaitStrategyBench.twoThreads           park  thrpt   30  25.905 ± 0.601  ops/us
 * //My guess here is modern cpus are very fast so spin waiting/yielding for a result in a loop is basically nothing,
 *  a thread can blast through a spin wait loop in mere pico-seconds, so before a result is ready a thread couldve gone through the spin wait read loop,
 *  try to acquire the lock multiple times in a nano second. However parking for a nano second actually subdues this issue, the cost of context switching
@@ -140,3 +140,21 @@ public class WaitStrategyBench {
     }
 }
 
+/* Result when we start combining from our node
+* Benchmark                           (strat)   Mode  Cnt   Score   Error   Units
+WaitStrategyBench.eightThreads         spin  thrpt   30  12.009 ± 0.804  ops/us
+WaitStrategyBench.eightThreads        yield  thrpt   30   8.934 ± 0.379  ops/us
+WaitStrategyBench.eightThreads         park  thrpt   30  25.839 ± 1.694  ops/us
+WaitStrategyBench.fourThreads          spin  thrpt   30  14.277 ± 1.437  ops/us
+WaitStrategyBench.fourThreads         yield  thrpt   30  15.593 ± 0.966  ops/us
+WaitStrategyBench.fourThreads          park  thrpt   30  26.810 ± 5.978  ops/us
+WaitStrategyBench.sixteenThreads       spin  thrpt   30   7.034 ± 0.944  ops/us
+WaitStrategyBench.sixteenThreads      yield  thrpt   30  10.995 ± 0.565  ops/us
+WaitStrategyBench.sixteenThreads       park  thrpt   30  25.464 ± 1.661  ops/us
+WaitStrategyBench.thirtyTwoThreads     spin  thrpt   30   4.273 ± 0.631  ops/us
+WaitStrategyBench.thirtyTwoThreads    yield  thrpt   30  11.550 ± 0.338  ops/us
+WaitStrategyBench.thirtyTwoThreads     park  thrpt   30  24.943 ± 1.309  ops/us
+WaitStrategyBench.twoThreads           spin  thrpt   30  21.966 ± 1.889  ops/us
+WaitStrategyBench.twoThreads          yield  thrpt   30  23.055 ± 0.936  ops/us
+WaitStrategyBench.twoThreads           park  thrpt   30  22.197 ± 2.981  ops/us
+* */

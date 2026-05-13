@@ -44,5 +44,4 @@ class FlatCombinerTest {
         assertEquals(3, list.size());
     }
 
-    //TODO add jcstress and jmh bench
 }

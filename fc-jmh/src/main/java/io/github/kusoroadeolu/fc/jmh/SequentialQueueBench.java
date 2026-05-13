@@ -12,6 +12,8 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -22,10 +24,9 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 15, time = 1)
 @Fork(3)
 
-//Measures flat combining with a park wait strategy against the JDK lock free linear queue
+//Measures flat combining with a park wait strategy against the JDK lock free concurrent linked queue
 
 
-//Re entrant lock
 /*
 * Benchmark                                (type)   Mode  Cnt   Score   Error   Units
 SequentialQueueBench.eightThreads           JDK  thrpt   45   9.952 ± 0.155  ops/us
@@ -104,10 +105,12 @@ public class SequentialQueueBench {
 
     void addOrRemove(Blackhole bh, ThreadState ts){
         boolean isEnqueue = ts.enqueue;
+
         ts.enqueue = !isEnqueue;
         if (isEnqueue) bh.consume(queue.offer(42));
         else bh.consume(queue.poll());
     }
+
 
     static class Runner {
         static void main() throws RunnerException {

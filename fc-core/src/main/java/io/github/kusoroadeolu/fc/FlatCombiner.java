@@ -10,11 +10,8 @@ package io.github.kusoroadeolu.fc;
  * States:
  * A node can be said to be detached from the queue when its age is set to -1
  * A node's result can be said to be applied when its action is nulled.
- * Happens before - visibility of the result is guaranteed by a set release to a node's action, a plain write to the result is backed by this write.
- * A get acquire read is made before the result is read
+ * Happens before - A write to a shared data structure T happens before a subsequent read
  * */
-
-import org.openjdk.jol.info.ClassLayout;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -99,7 +96,7 @@ public class FlatCombiner<T> implements Combiner<T>{
                 try {
                     if (ours.lpAge() == -1) list.casToHead(ours); //Use a plain read here due to get_acquire/set_release guarantees from acquiring the lock
                     int combineCount = 0;
-                    Node<T, R> h = list.lvHead();
+                    Node<T, R> h = list.loHead();
                     Node<T, R> curr = h;
 
                     int mcp = maxCombinePass;
@@ -246,7 +243,7 @@ public class FlatCombiner<T> implements Combiner<T>{
         public void casToHead(Node<T, R> node){
             Node<T, R> next;
             do {
-                next = lvHead();
+                next = loHead();
                 node.spNext(next); //Backed by volatile write, if it succeeds
                 node.spAge(Integer.MAX_VALUE); //Dummy age to avoid getting re pruned immediately, this will be reset by the combiner.
                 // Plain write is backed by a volatile cas
@@ -258,8 +255,8 @@ public class FlatCombiner<T> implements Combiner<T>{
         //We want to prune old nodes, we have to avoid modifying the head, this should only be accessed by one thread at a time
         //Next will always be visible from the head, as long as, p != null, we keep pruning
         public void detachOldNodes(int count, int threshold) {
-            Node<T, R> prev = lvHead();
-            Node<T, R> curr = prev.lpNext(), succ;
+            Node<T, R> prev = loHead();
+            Node<T, R> curr = prev.lpNext(), succ; //Next is always visible, as it was backed by a set release barrier during the cas, a load acquire barrier here makes it immediately visible
 
             for (; curr != null; curr = succ){
                 succ = curr.loNext();
@@ -272,12 +269,12 @@ public class FlatCombiner<T> implements Combiner<T>{
             }
         }
 
-        public Node<T, R> lvHead(){
-            return (Node<T, R>) HEAD.getVolatile(this);
+        public Node<T, R> loHead(){
+            return (Node<T, R>) HEAD.getAcquire(this);
         }
 
         public int countDeadNodes(){
-            var curr = lvHead();
+            var curr = loHead();
             int i = 0, count = 0;
             for (; curr != null; curr = curr.loNext(), ++i){
                 if (curr.loAge() == -1) ++count;
@@ -294,7 +291,7 @@ public class FlatCombiner<T> implements Combiner<T>{
         }
 
         public boolean canReachTail(){
-            var curr = lvHead();
+            var curr = loHead();
             int steps = 0;
             for (;  curr != null; curr = curr.loNext()) {
                 if (++steps > 1000) return false;
@@ -312,10 +309,6 @@ public class FlatCombiner<T> implements Combiner<T>{
 
         public FCLock() {
             this.state = new AtomicInteger();
-        }
-
-        boolean isHeld(){
-            return state.get() == HELD;
         }
 
         boolean tryAcquire(){
@@ -347,9 +340,4 @@ public class FlatCombiner<T> implements Combiner<T>{
         }
     }
 
-    static class Main {
-        static void main() {
-            System.out.println(ClassLayout.parseClass(Node.class).toPrintable());
-        }
-    }
 }
