@@ -1,8 +1,6 @@
 package io.github.kusoroadeolu.fc;
 
 
-import jdk.internal.vm.annotation.Contended;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Objects;
@@ -94,9 +92,10 @@ public class HandOffCombiner<T> implements Combiner<T>{
         int mcp = maxCombinePass;
         for (int c = 0; c < mcp && (n = curr.loNext()) != null ; ++c, curr = n) {
             curr.value = curr.action.apply(item);
-            curr.soNext(null); //We can use a plain write here as a combiner can't read nodes above,
+            curr.sopNext(null); //We can use a plain write here as a combiner can't read nodes above,
             // though to ensure the holding node thread sees the write and doesn't hold ref to a node which
-            // is linked to the rest of the list. Under high contention, a plain write here might not matter
+            // is linked to the rest of the list. Under high contention, a plain write here might not matter.
+            //Let's use an opaque write just to be safe
             curr.soStatus(Node.COMBINER);
         }
 
@@ -123,6 +122,10 @@ public class HandOffCombiner<T> implements Combiner<T>{
 
         void soStatus(int status) {
             STATUS.setRelease(this, status);
+        }
+
+        void sopNext(Node<T, R> next) {
+            NEXT.setOpaque(this, next);
         }
 
         Node<T, R> loNext() {
