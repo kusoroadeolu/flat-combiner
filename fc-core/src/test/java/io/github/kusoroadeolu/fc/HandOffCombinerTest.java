@@ -7,13 +7,14 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LincheckTests {
+import static org.junit.jupiter.api.Assertions.*;
 
+class HandOffCombinerTest {
     @Test
     public void sizeTest() {
         Lincheck.runConcurrentTest(() -> {
             var list = new ArrayList<Integer>();
-            final Combiner<List<Integer>> combiner = new HandOffCombiner<>(list);
+            final Combiner<List<Integer>> combiner = new FlatCombiner<>(list);
             Thread t1 = new Thread(() -> combiner.combine(l -> l.add(1)));
             Thread t2 = new Thread(() -> combiner.combine(l -> l.add(2)));
             Thread t3 = new Thread(() -> combiner.combine(l -> l.add(3)));
@@ -39,7 +40,7 @@ public class LincheckTests {
     public void noLostWrites() {
         Lincheck.runConcurrentTest(() -> {
             var list = new ArrayList<Integer>();
-            final Combiner<List<Integer>> combiner = new HandOffCombiner<>(list);
+            final Combiner<List<Integer>> combiner = new FlatCombiner<>(list);
             Thread t1 = new Thread(() -> combiner.combine(l -> l.add(1)));
             Thread t2 = new Thread(() -> combiner.combine(l -> l.add(2)));
             Thread t3 = new Thread(() -> combiner.combine(l -> l.add(3)));

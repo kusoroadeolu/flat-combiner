@@ -2,6 +2,7 @@ package io.github.kusoroadeolu.fc.jmh;
 
 import io.github.kusoroadeolu.fc.Combiners;
 import io.github.kusoroadeolu.fc.FlatCombiner;
+import io.github.kusoroadeolu.fc.HandOffCombiner;
 import io.github.kusoroadeolu.fc.WaitStrategy;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
-@Measurement(iterations = 15, time = 1)
+@Measurement(iterations = 10, time = 1)
 @Fork(3)
 
 //Measures flat combining with a park wait strategy against the JDK lock free concurrent linked queue
@@ -64,6 +65,34 @@ SequentialQueueBench.twoThreads    avgt   45  0.078 ± 0.002  us/op
 *
 * */
 
+/* Handoff combiner
+* Benchmark                           Mode  Cnt   Score   Error   Units
+SequentialQueueBench.eightThreads  thrpt   30  25.972 ± 1.690  ops/us
+SequentialQueueBench.fourThreads   thrpt   30  25.324 ± 1.213  ops/us
+SequentialQueueBench.twoThreads    thrpt   30  23.111 ± 0.434  ops/us
+* */
+
+/* Handoff combiner with padding with @contended
+* Benchmark                           Mode  Cnt   Score   Error   Units
+SequentialQueueBench.eightThreads  thrpt   30  25.583 ± 1.241  ops/us
+SequentialQueueBench.fourThreads   thrpt   30  24.061 ± 0.868  ops/us
+SequentialQueueBench.twoThreads    thrpt   30  23.641 ± 0.426  ops/us
+* */
+
+/* Handoff combiner latency
+* Benchmark                          Mode  Cnt  Score   Error  Units
+SequentialQueueBench.eightThreads  avgt   30  0.358 ± 0.014  us/op
+SequentialQueueBench.fourThreads   avgt   30  0.171 ± 0.011  us/op
+SequentialQueueBench.twoThreads    avgt   30  0.085 ± 0.001  us/op
+* */
+
+
+/* Handoff combiner latency with contended
+* Benchmark                          Mode  Cnt  Score   Error  Units
+SequentialQueueBench.eightThreads  avgt   30  0.568 ± 0.097  us/op
+SequentialQueueBench.fourThreads   avgt   30  0.325 ± 0.016  us/op
+SequentialQueueBench.twoThreads    avgt   30  0.172 ± 0.007  us/op
+* */
 
 public class SequentialQueueBench {
 
@@ -79,7 +108,8 @@ public class SequentialQueueBench {
 
     @Setup
     public void setup() {
-         queue = /*type.equals("JDK") ? new ConcurrentLinkedQueue<>() :*/ Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 500), WaitStrategy.park(1));
+        // queue = /*type.equals("JDK") ? new ConcurrentLinkedQueue<>() :*/ Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 500), WaitStrategy.park(1));
+        queue = Combiners.queue(new HandOffCombiner<>(new ArrayDeque<>(), 20), WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 

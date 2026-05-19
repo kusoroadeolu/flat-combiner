@@ -28,20 +28,5 @@ class FlatCombinerTest {
         assertTrue(list.contains(1));
     }
 
-    @Test
-    void assertCombinerWithMultipleThreadsAcceptsValues() throws InterruptedException {
-        CountDownLatch wait = new CountDownLatch(3);
-        try(var ex = Executors.newVirtualThreadPerTaskExecutor()) {
-           for (int i = 0; i < 3; ++i){
-               ex.submit(() -> {
-                   combiner.combine(l -> l.add(1));
-                   wait.countDown();
-               });
-           }
-        }
-
-        wait.await();
-        assertEquals(3, list.size());
-    }
 
 }

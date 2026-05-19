@@ -2,6 +2,7 @@ package io.github.kusoroadeolu.fc.jmh;
 
 import io.github.kusoroadeolu.fc.Combiners;
 import io.github.kusoroadeolu.fc.FlatCombiner;
+import io.github.kusoroadeolu.fc.HandOffCombiner;
 import io.github.kusoroadeolu.fc.WaitStrategy;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
-@Measurement(iterations = 15, time = 1)
+@Measurement(iterations = 10, time = 1)
 @Fork(3)
 
 /*
@@ -32,8 +33,8 @@ PriorityQueueBench.twoThreads                                      Combiner  thr
 public class PriorityQueueBench {
     private Queue<Integer> queue;
 
-    @Param({"JDK", "Combiner"})
-    private String type;
+//    @Param({"JDK", "Combiner"})
+//    private String type;
 
     @State(Scope.Thread)
     public static class ThreadState {
@@ -43,7 +44,8 @@ public class PriorityQueueBench {
     @Setup
     public void setup() {
         Queue<Integer> pq = new PriorityQueue<>();
-        queue = type.equals("JDK") ? new PriorityBlockingQueue<>() : Combiners.queue(new FlatCombiner<>(pq),  WaitStrategy.park(1));
+//        queue = type.equals("JDK") ? new PriorityBlockingQueue<>() : Combiners.queue(new FlatCombiner<>(pq),  WaitStrategy.park(1));
+         queue = Combiners.queue(new HandOffCombiner<>(pq, 20), WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 
