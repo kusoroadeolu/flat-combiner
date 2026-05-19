@@ -17,7 +17,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 @Warmup(iterations = 10, time = 1)
@@ -27,18 +27,21 @@ import java.util.concurrent.TimeUnit;
 //Measures flat combining with a park wait strategy against the JDK lock free concurrent linked queue
 
 
-/*
+/* Thrpt
 * Benchmark                                (type)   Mode  Cnt   Score   Error   Units
 SequentialQueueBench.eightThreads           JDK  thrpt   45   9.952 ± 0.155  ops/us
 SequentialQueueBench.eightThreads      Combiner  thrpt   45  25.189 ± 1.086  ops/us
 SequentialQueueBench.fourThreads            JDK  thrpt   45   8.936 ± 0.149  ops/us
 SequentialQueueBench.fourThreads       Combiner  thrpt   45  24.848 ± 0.475  ops/us
-SequentialQueueBench.sixteenThreads         JDK  thrpt   45  10.234 ± 0.094  ops/us
-SequentialQueueBench.sixteenThreads    Combiner  thrpt   45  24.852 ± 0.979  ops/us
-SequentialQueueBench.thirtyTwoThreads       JDK  thrpt   45  10.337 ± 0.097  ops/us
-SequentialQueueBench.thirtyTwoThreads  Combiner  thrpt   45  24.176 ± 0.798  ops/us
 SequentialQueueBench.twoThreads             JDK  thrpt   45  12.736 ± 0.561  ops/us
 SequentialQueueBench.twoThreads        Combiner  thrpt   45  26.168 ± 0.333  ops/us
+* */
+
+/* Thrpt using @Contended
+* Benchmark                           Mode  Cnt   Score   Error   Units
+SequentialQueueBench.eightThreads  thrpt   45  22.703 ± 1.303  ops/us
+SequentialQueueBench.fourThreads   thrpt   45  25.290 ± 0.797  ops/us
+SequentialQueueBench.twoThreads    thrpt   45  23.589 ± 0.821  ops/us
 * */
 
 /*
@@ -48,17 +51,24 @@ SequentialQueueBench.eightThreads           JDK  avgt   45  0.824 ± 0.014  us/o
 SequentialQueueBench.eightThreads      Combiner  avgt   45  0.454 ± 0.010  us/op
 SequentialQueueBench.fourThreads            JDK  avgt   45  0.441 ± 0.005  us/op
 SequentialQueueBench.fourThreads       Combiner  avgt   45  0.255 ± 0.027  us/op
-SequentialQueueBench.sixteenThreads         JDK  avgt   45  1.595 ± 0.016  us/op
-SequentialQueueBench.sixteenThreads    Combiner  avgt   45  1.517 ± 0.126  us/op
-SequentialQueueBench.thirtyTwoThreads       JDK  avgt   45  3.156 ± 0.103  us/op
-SequentialQueueBench.thirtyTwoThreads  Combiner  avgt   45  2.937 ± 0.473  us/op
 SequentialQueueBench.twoThreads             JDK  avgt   45  0.175 ± 0.011  us/op
 SequentialQueueBench.twoThreads        Combiner  avgt   45  0.122 ± 0.011  us/op
 * */
+
+/* Latency using @Contended
+* Benchmark                          Mode  Cnt  Score   Error  Units
+SequentialQueueBench.eightThreads  avgt   45  0.358 ± 0.016  us/op
+SequentialQueueBench.fourThreads   avgt   45  0.171 ± 0.007  us/op
+SequentialQueueBench.twoThreads    avgt   45  0.078 ± 0.002  us/op
+* Latency actually reduced pretty significantly
+*
+* */
+
+
 public class SequentialQueueBench {
 
     private Queue<Integer> queue;
-    @Param({"JDK", "Combiner"})
+    // @Param({"JDK", "Combiner"})
     private String type;
 
     @State(Scope.Thread)
@@ -69,7 +79,7 @@ public class SequentialQueueBench {
 
     @Setup
     public void setup() {
-        queue = type.equals("JDK") ? new ConcurrentLinkedQueue<>() : Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 500), WaitStrategy.park(1));
+         queue = /*type.equals("JDK") ? new ConcurrentLinkedQueue<>() :*/ Combiners.queue(new FlatCombiner<>(new ArrayDeque<>(), 20, 500), WaitStrategy.park(1));
         for (int i = 0; i < 1000; i++) queue.offer(i);
     }
 
@@ -78,7 +88,7 @@ public class SequentialQueueBench {
     public void twoThreads(Blackhole bh, ThreadState ts) {
         addOrRemove(bh, ts);
     }
-
+    //https://www.baeldung.com/java-false-sharing-contended
     @Threads(4)
     @Benchmark
     public void fourThreads(Blackhole bh, ThreadState ts) {
@@ -91,17 +101,6 @@ public class SequentialQueueBench {
         addOrRemove(bh, ts);
     }
 
-    @Threads(16)
-    @Benchmark
-    public void sixteenThreads(Blackhole bh, ThreadState ts) {
-        addOrRemove(bh, ts);
-    }
-
-    @Threads(32)
-    @Benchmark
-    public void thirtyTwoThreads(Blackhole bh, ThreadState ts) {
-        addOrRemove(bh, ts);
-    }
 
     void addOrRemove(Blackhole bh, ThreadState ts){
         boolean isEnqueue = ts.enqueue;

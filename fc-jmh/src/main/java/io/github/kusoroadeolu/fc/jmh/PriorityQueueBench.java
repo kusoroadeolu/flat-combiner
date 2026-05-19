@@ -25,10 +25,6 @@ PriorityQueueBench.eightThreads                                         JDK  thr
 PriorityQueueBench.eightThreads                                    Combiner  thrpt   45  11.236 ± 0.194  ops/us
 PriorityQueueBench.fourThreads                                          JDK  thrpt   45   8.387 ± 0.493  ops/us
 PriorityQueueBench.fourThreads                                     Combiner  thrpt   45  11.473 ± 0.300  ops/us
-PriorityQueueBench.sixteenThreads                                       JDK  thrpt   45   7.534 ± 0.755  ops/us
-PriorityQueueBench.sixteenThreads                                  Combiner  thrpt   45  10.284 ± 0.325  ops/us
-PriorityQueueBench.thirtyTwoThreads                                     JDK  thrpt   45   7.136 ± 0.801  ops/us
-PriorityQueueBench.thirtyTwoThreads                                Combiner  thrpt   45   9.665 ± 0.224  ops/us
 PriorityQueueBench.twoThreads                                           JDK  thrpt   45   7.586 ± 0.632  ops/us
 PriorityQueueBench.twoThreads                                      Combiner  thrpt   45  12.190 ± 0.228  ops/us
 * */
@@ -69,18 +65,6 @@ public class PriorityQueueBench {
         doWork(bh, ts);
     }
 
-
-    @Threads(16)
-    @Benchmark
-    public void sixteenThreads(Blackhole bh, ThreadState ts) {
-        doWork(bh, ts);
-    }
-
-    @Threads(32)
-    @Benchmark
-    public void thirtyTwoThreads(Blackhole bh, ThreadState ts) {
-        doWork(bh, ts);
-    }
 
     private void doWork(Blackhole bh, ThreadState ts) {
         boolean isInsert = ts.insert;

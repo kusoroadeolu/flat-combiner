@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.kusoroadeolu</groupId>
         <artifactId>fc</artifactId>
-        <version>0.0.1</version>
+        <version>0.1.0</version>
     </parent>
 
     <artifactId>fc-stress</artifactId>
@@ -20,7 +20,7 @@
         <dependency>
             <groupId>io.github.kusoroadeolu</groupId>
             <artifactId>fc-core</artifactId>
-            <version>0.0.1</version>
+            <version>0.1.0</version>
         </dependency>
     </dependencies>
 

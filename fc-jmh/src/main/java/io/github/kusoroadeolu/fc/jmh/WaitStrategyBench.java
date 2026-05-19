@@ -110,18 +110,6 @@ public class WaitStrategyBench {
         addOrRemove(bh, ts);
     }
 
-    @Threads(16)
-    @Benchmark
-    public void sixteenThreads(Blackhole bh, ThreadState ts) {
-        addOrRemove(bh, ts);
-    }
-
-    @Threads(32)
-    @Benchmark
-    public void thirtyTwoThreads(Blackhole bh, ThreadState ts) {
-        addOrRemove(bh, ts);
-    }
-
     void addOrRemove(Blackhole bh, ThreadState ts){
         boolean isEnqueue = ts.enqueue;
         ts.enqueue = !isEnqueue;

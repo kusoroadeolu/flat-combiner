@@ -1,5 +1,9 @@
 package io.github.kusoroadeolu.fc;
-
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 /*
  * Based on the paper https://people.csail.mit.edu/shanir/publications/Flat%20Combining%20SPAA%2010.pdf
@@ -10,14 +14,7 @@ package io.github.kusoroadeolu.fc;
  * States:
  * A node can be said to be detached from the queue when its age is set to -1
  * A node's result can be said to be applied when its action is nulled.
- * Happens before - A write to a shared data structure T happens before a subsequent read
  * */
-
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 /*
 * Algo:
@@ -157,6 +154,7 @@ public class FlatCombiner<T> implements Combiner<T>{
     }
 
     @SuppressWarnings("unchecked")
+    @jdk.internal.vm.annotation.Contended
     static class Node<T, R>{
         volatile Function<T, R> action; //We're spinning on this, need to ensure it is on its own cache line
         volatile int age = -1;
