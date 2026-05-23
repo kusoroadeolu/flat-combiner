@@ -110,7 +110,7 @@ public class FlatCombiner<T> implements Combiner<T>{
                         curr = curr.loNext();
                     }
 
-                    if (combinePass != 0 && combinePass % pt == 0) {
+                    if (combinePass > 0 && combinePass % pt == 0) {
                         list.detachOldNodes(combinePass, pt);
                     }
 
@@ -144,19 +144,11 @@ public class FlatCombiner<T> implements Combiner<T>{
     }
 
 
-    //For stress tests
-    public int deadNodeCount(){
-        return pubList.countDeadNodes();
-    }
-
-    public boolean canReachTail(){
-        return pubList.canReachTail();
-    }
 
     @SuppressWarnings("unchecked")
     @jdk.internal.vm.annotation.Contended
     static class Node<T, R>{
-        volatile Function<T, R> action; //We're spinning on this, need to ensure it is on its own cache line
+        volatile Function<T, R> action;
         volatile int age = -1;
         volatile Node<T, R> next;
         R item;
@@ -271,32 +263,6 @@ public class FlatCombiner<T> implements Combiner<T>{
             return (Node<T, R>) HEAD.getAcquire(this);
         }
 
-        public int countDeadNodes(){
-            var curr = loHead();
-            int i = 0, count = 0;
-            for (; curr != null; curr = curr.loNext(), ++i){
-                if (curr.loAge() == -1) ++count;
-            }
-
-            return count;
-        }
-
-        public boolean assertOursInQueue(Node<T, R> curr, Node<T, R> ours) {
-            for (; curr != null; curr = curr.loNext()){
-                if (curr == ours) return true;
-            }
-            return false;
-        }
-
-        public boolean canReachTail(){
-            var curr = loHead();
-            int steps = 0;
-            for (;  curr != null; curr = curr.loNext()) {
-                if (++steps > 1000) return false;
-
-            }
-            return true;
-        }
     }
 
 

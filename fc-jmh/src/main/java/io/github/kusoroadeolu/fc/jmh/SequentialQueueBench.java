@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 //Measures flat combining with a park wait strategy against the JDK lock free concurrent linked queue
 
-
+// Combiner = flat combiner
 /* Thrpt
 * Benchmark                                (type)   Mode  Cnt   Score   Error   Units
 SequentialQueueBench.eightThreads           JDK  thrpt   45   9.952 ± 0.155  ops/us

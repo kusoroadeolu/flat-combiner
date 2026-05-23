@@ -95,7 +95,8 @@ public class HandOffCombiner<T> implements Combiner<T>{
             curr.sopNext(null); //We can use a plain write here as a combiner can't read nodes above,
             // though to ensure the holding node thread sees the write and doesn't hold ref to a node which
             // is linked to the rest of the list. Under high contention, a plain write here might not matter.
-            //Let's use an opaque write just to be safe
+            //Let's use an opaque write just to be safe that a thread doesn't hold a "next" ref to a node for too long
+            //Though this is probably a non issue
             curr.soStatus(Node.COMBINER);
         }
 

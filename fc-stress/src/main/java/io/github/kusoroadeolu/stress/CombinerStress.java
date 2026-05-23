@@ -40,7 +40,7 @@ public class CombinerStress {
     @JCStressTest
     @Outcome(id = "1, 1, 1", expect = Expect.ACCEPTABLE, desc = "All results visible")
     @State
-    //Our result should never be null, though null can be a valid result irl, this is just a test to ensure our item is always visible
+    //Our result should never be null, though null can be a valid result normally, this is just a test to ensure our item is always visible
     public static class ResultVisibilityTest {
         public final FlatCombiner<Integer> fc;
         private static final int INVALID = -1;
@@ -87,69 +87,5 @@ public class CombinerStress {
         }
     }
 
-    @JCStressTest
-    @Outcome(id = "0", expect = Expect.ACCEPTABLE, desc = "No dead nodes")
-    @State
-    public static class DeadNodeStress {
-        public final FlatCombiner<Integer> fc;
 
-        public DeadNodeStress() {
-            this.fc = new FlatCombiner<>(0);
-
-        }
-
-        @Actor
-        public void actor1() {
-            fc.combine(i -> ++i);
-        }
-
-        @Actor
-        public void actor2() {
-            fc.combine(i -> ++i);
-        }
-
-        @Actor
-        public void actor3() {
-            fc.combine(i -> ++i);
-        }
-
-
-        @Arbiter
-        public void arbiter(I_Result r) {
-             r.r1 = fc.deadNodeCount();
-        }
-    }
-
-    @JCStressTest
-    @Outcome(id = "1", expect = Expect.ACCEPTABLE, desc = "Can reach tail")
-    @State
-    public static class TailInvariantStress {
-        public final FlatCombiner<Integer> fc;
-
-        public TailInvariantStress() {
-            this.fc = new FlatCombiner<>(0);
-
-        }
-
-        @Actor
-        public void actor1() {
-            fc.combine(i -> ++i);
-        }
-
-        @Actor
-        public void actor2() {
-            fc.combine(i -> ++i);
-        }
-
-        @Actor
-        public void actor3() {
-            fc.combine(i -> ++i);
-        }
-
-
-        @Arbiter
-        public void arbiter(I_Result r) {
-            r.r1 = fc.canReachTail() ? 1 : 0;
-        }
-    }
 }

@@ -35,12 +35,6 @@ WaitStrategyBench.eightThreads         park  thrpt   30  25.489 ± 1.068  ops/us
 WaitStrategyBench.fourThreads          spin  thrpt   30  10.407 ± 0.794  ops/us
 WaitStrategyBench.fourThreads         yield  thrpt   30  10.787 ± 0.672  ops/us
 WaitStrategyBench.fourThreads          park  thrpt   30  27.009 ± 1.028  ops/us
-WaitStrategyBench.sixteenThreads       spin  thrpt   30   6.721 ± 1.167  ops/us
-WaitStrategyBench.sixteenThreads      yield  thrpt   30   7.329 ± 0.193  ops/us
-WaitStrategyBench.sixteenThreads       park  thrpt   30  26.142 ± 1.376  ops/us
-WaitStrategyBench.thirtyTwoThreads     spin  thrpt   30   3.654 ± 0.854  ops/us
-WaitStrategyBench.thirtyTwoThreads    yield  thrpt   30   5.898 ± 0.118  ops/us
-WaitStrategyBench.thirtyTwoThreads     park  thrpt   30  25.280 ± 0.980  ops/us
 WaitStrategyBench.twoThreads           spin  thrpt   30  10.931 ± 1.269  ops/us
 WaitStrategyBench.twoThreads          yield  thrpt   30  15.552 ± 0.855  ops/us
 WaitStrategyBench.twoThreads           park  thrpt   30  25.905 ± 0.601  ops/us
@@ -58,12 +52,6 @@ WaitStrategyBench.eightThreads         park  avgt   30     0.461 ±    0.027  us
 WaitStrategyBench.fourThreads          spin  avgt   30     0.469 ±    0.033  us/op
 WaitStrategyBench.fourThreads         yield  avgt   30     0.461 ±    0.027  us/op
 WaitStrategyBench.fourThreads          park  avgt   30     0.242 ±    0.026  us/op
-WaitStrategyBench.sixteenThreads       spin  avgt   30     3.497 ±    0.527  us/op
-WaitStrategyBench.sixteenThreads      yield  avgt   30     2.757 ±    0.107  us/op
-WaitStrategyBench.sixteenThreads       park  avgt   30     0.880 ±    0.026  us/op
-WaitStrategyBench.thirtyTwoThreads     spin  avgt   30  2723.163 ± 3526.529  us/op
-WaitStrategyBench.thirtyTwoThreads    yield  avgt   30     6.622 ±    0.201  us/op
-WaitStrategyBench.thirtyTwoThreads     park  avgt   30     2.314 ±    0.160  us/op
 WaitStrategyBench.twoThreads           spin  avgt   30     0.205 ±    0.016  us/op
 WaitStrategyBench.twoThreads          yield  avgt   30     0.178 ±    0.006  us/op
 WaitStrategyBench.twoThreads           park  avgt   30     0.122 ±    0.013  us/op
