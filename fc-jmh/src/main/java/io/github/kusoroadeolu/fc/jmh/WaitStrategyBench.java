@@ -7,14 +7,12 @@ import io.github.kusoroadeolu.fc.WaitStrategy;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.profile.JavaFlightRecorderProfiler;
-import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
@@ -35,9 +33,7 @@ WaitStrategyBench.eightThreads         park  thrpt   30  25.489 ± 1.068  ops/us
 WaitStrategyBench.fourThreads          spin  thrpt   30  10.407 ± 0.794  ops/us
 WaitStrategyBench.fourThreads         yield  thrpt   30  10.787 ± 0.672  ops/us
 WaitStrategyBench.fourThreads          park  thrpt   30  27.009 ± 1.028  ops/us
-WaitStrategyBench.twoThreads           spin  thrpt   30  10.931 ± 1.269  ops/us
-WaitStrategyBench.twoThreads          yield  thrpt   30  15.552 ± 0.855  ops/us
-WaitStrategyBench.twoThreads           park  thrpt   30  25.905 ± 0.601  ops/us
+
 * //My guess here is modern cpus are very fast so spin waiting/yielding for a result in a loop is basically nothing,
 *  a thread can blast through a spin wait loop in mere pico-seconds, so before a result is ready a thread couldve gone through the spin wait read loop,
 *  try to acquire the lock multiple times in a nano second. However parking for a nano second actually subdues this issue, the cost of context switching
@@ -52,9 +48,6 @@ WaitStrategyBench.eightThreads         park  avgt   30     0.461 ±    0.027  us
 WaitStrategyBench.fourThreads          spin  avgt   30     0.469 ±    0.033  us/op
 WaitStrategyBench.fourThreads         yield  avgt   30     0.461 ±    0.027  us/op
 WaitStrategyBench.fourThreads          park  avgt   30     0.242 ±    0.026  us/op
-WaitStrategyBench.twoThreads           spin  avgt   30     0.205 ±    0.016  us/op
-WaitStrategyBench.twoThreads          yield  avgt   30     0.178 ±    0.006  us/op
-WaitStrategyBench.twoThreads           park  avgt   30     0.122 ±    0.013  us/op
 * */
 public class WaitStrategyBench {
 
@@ -69,7 +62,7 @@ public class WaitStrategyBench {
 
     @Setup
     public void setup() {
-        Combiner<Queue<Integer>> combiner = new FlatCombiner<>(new ArrayDeque<>(), 20, 500);
+        Combiner<Queue<Integer>> combiner = new FlatCombiner<>(new ArrayDeque<>());
         queue = switch (strat) {
            case "spin" -> Combiners.queue(combiner, WaitStrategy.spinWait());
            case "yield" -> Combiners.queue(combiner, WaitStrategy.yield());
@@ -78,12 +71,6 @@ public class WaitStrategyBench {
         };
 
         for (int i = 0; i < 1000; i++) queue.offer(i);
-    }
-
-    @Threads(2)
-    @Benchmark
-    public void twoThreads(Blackhole bh, ThreadState ts) {
-        addOrRemove(bh, ts);
     }
 
     @Threads(4)

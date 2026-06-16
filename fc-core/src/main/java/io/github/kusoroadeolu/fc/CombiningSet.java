@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-class CombiningSet<T> extends CombiningCollection<T> implements  Set<T> {
+class CombiningSet<T> extends CombiningCollection<T> implements Set<T> {
     private final Combiner<Set<T>> combiner;
     private final WaitStrategy waitStrategy;
 

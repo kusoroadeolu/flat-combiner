@@ -43,6 +43,8 @@ import java.util.function.Function;
 *       Repeatedly: ++count < SPIN_COUNT
 *           If lvIsApplied return;
 *
+
+*
 * */
 public class FlatCombiner<T> implements Combiner<T>{
     private final FCLock lock;
@@ -52,13 +54,15 @@ public class FlatCombiner<T> implements Combiner<T>{
     private final int maxCombinePass;
     private final int pruneThreshold;
     private int combinePass;
+    private static final int EXPIRED = -1;
+    private static final int MAX_SPINS  = 100;
 
     public FlatCombiner(T item, int combinePass, int pruneThreshold) {
         this.lock = new FCLock();
         this.pNode = ThreadLocal.withInitial(Node::new);
         this.item = Objects.requireNonNull(item);
         this.pubList = new PublicationQueue<>();
-        this.maxCombinePass = Validator.ensureGreaterThanOrEqualToZero( combinePass, "Combine pass");
+        this.maxCombinePass = Validator.ensureGreaterThanOrEqualToZero(combinePass, "Combine pass");
         this.pruneThreshold = Validator.ensureGreaterThanOrEqualToZero(pruneThreshold, "Prune threshold");
     }
 
@@ -68,7 +72,7 @@ public class FlatCombiner<T> implements Combiner<T>{
 
 
     public <R>R combine(Function<T, R> action) {
-        return combine(action, WaitStrategy.park(1));
+        return combine(action, WaitStrategy.spinWait());
     }
 
     @SuppressWarnings("unchecked")
@@ -80,25 +84,28 @@ public class FlatCombiner<T> implements Combiner<T>{
 
         //Ideally the paper pushes towards a plain write for the action field, I do believe it is under the assumption this write will be backed by the cas to head op when enqueueing,
         // there's no ordering guarantee between this write being seen by the combiner if we use a plain write
+
         ours.spItem(null); //Ensure we don't write after we've published our action, could lead to a race condition where we overwrite if the combiner has already applied our action
-        ours.soAction(action); //A release fence in the case we're still active in the queue. //Linearizability point where we are active if we're already on the queue
+        ours.soAction(action); //A release fence in the case we're still active in the queue.
+        // Linearizability point denoting we are active if we're already on the queue
 
 
-        if (ours.loAge() == -1) {
+        if (ours.loAge() == EXPIRED) {
             list.casToHead(ours);
         }
 
         while (!ours.isApplied()) { //Get acquire, item should always be visible if this is read
             if (l.tryAcquire()) {
                 try {
-                    if (ours.lpAge() == -1) list.casToHead(ours); //Use a plain read here due to get_acquire/set_release guarantees from acquiring the lock
+                    if (ours.lpAge() == EXPIRED) list.casToHead(ours); //Use a plain read here due to get_acquire/set_release guarantees from acquiring the lock
                     int combineCount = 0;
+
                     Node<T, R> h = list.loHead();
                     Node<T, R> curr = h;
 
                     int mcp = maxCombinePass;
                     int pt = pruneThreshold;
-                    ++combinePass;
+
                     while (curr != null && combineCount < mcp) {
                         var a =  curr.loAction();
 
@@ -110,28 +117,28 @@ public class FlatCombiner<T> implements Combiner<T>{
                         curr = curr.loNext();
                     }
 
-                    if (combinePass > 0 && combinePass % pt == 0) {
-                        list.detachOldNodes(combinePass, pt);
+                    int cp = combinePass++;
+
+                    if (cp > 0 && cp % pt == 0) {
+                        list.detachOldNodes(cp, pt);
                     }
 
                     if (!ours.isAppliedPlain())
-                        apply(ours, ours.lpAction()); //Plain reads and writes here since we're writing to our own thread
+                        apply(ours, ours.lpAction()); //Plain reads and writes are alright here since we're writing to our own node under the lock
 
-                    return ours.lpItem(); //We need an acquire read here, but why?
+                    return ours.lpItem();
                 }finally {
                     l.release();
                 }
 
             }
 
-            int count = 0;
-            while (++count < 100) {
+            for (int spins = 0; spins < MAX_SPINS ; ++spins) {
                 if (ours.isApplied()) return ours.lpItem();
                 strategy.idle();
             }
 
-            if (ours.loAge() == -1) list.casToHead(ours); //Re-append if we're dead
-
+            if (ours.loAge() == EXPIRED) list.casToHead(ours);
         }
 
         return ours.lpItem();
@@ -182,8 +189,8 @@ public class FlatCombiner<T> implements Combiner<T>{
             return (int) AGE.get(this);
         }
 
-        void soAge(int a){
-            AGE.setRelease(this, a);
+        void setExpired(){
+            AGE.setRelease(this, FlatCombiner.EXPIRED);
         }
 
         void spAge(int a){
@@ -250,9 +257,10 @@ public class FlatCombiner<T> implements Combiner<T>{
 
             for (; curr != null; curr = succ){
                 succ = curr.loNext();
+                //Use an ordered read for age since a thread could've recas'd itself back to the list if it noticed it was dead
                 if ((count - curr.loAge()) > threshold) {
                     prev.spNext(succ);
-                    curr.soAge(-1);
+                    curr.setExpired();
                 } else {
                     prev = curr; // only advance prev if curr survived
                 }

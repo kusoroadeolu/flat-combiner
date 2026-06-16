@@ -30,7 +30,7 @@ import java.util.function.Function;
 *
 *
 *
-* This combiner is pretty susceptible to cache misses (not false sharing) as a combiner loading a node that was previously in its thread local,
+* This combiner is pretty susceptible to cache misses (when initially loading in their threadlocal node) and false sharing as a combiner loading a node that was previously in its thread local,
 * can force threads to reread the cache line which that node resides
 *
 *
@@ -80,10 +80,9 @@ public class HandOffCombiner<T> implements Combiner<T>{
         ours.soNext(old); //Set old to our next, makes action immediately visible
         pNode.set((Node<T, Object>) ours);
 
-        while (ours.loStatus() == Node.NOT_COMBINER) {
+        while(ours.loStatus() == Node.NOT_COMBINER) {
             strategy.idle();
-        } //Acquire read from status should make function and value immediately visible
-
+        }
         if (ours.action == null) return ours.value;
 
 
@@ -92,15 +91,16 @@ public class HandOffCombiner<T> implements Combiner<T>{
         int mcp = maxCombinePass;
         for (int c = 0; c < mcp && (n = curr.loNext()) != null ; ++c, curr = n) {
             curr.value = curr.action.apply(item);
-            curr.sopNext(null); //We can use a plain write here as a combiner can't read nodes above,
+            curr.spNext(null); //We can use a plain write here as a later combiner can't read nodes above,
             // though to ensure the holding node thread sees the write and doesn't hold ref to a node which
             // is linked to the rest of the list. Under high contention, a plain write here might not matter.
             //Let's use an opaque write just to be safe that a thread doesn't hold a "next" ref to a node for too long
             //Though this is probably a non issue
+            //Changed to use a plain write as it's backed by the status write
             curr.soStatus(Node.COMBINER);
         }
 
-        curr.soStatus(Node.COMBINER);
+        curr.soStatus(Node.COMBINER); //Handoff
         return ours.value;
     }
 
@@ -125,8 +125,8 @@ public class HandOffCombiner<T> implements Combiner<T>{
             STATUS.setRelease(this, status);
         }
 
-        void sopNext(Node<T, R> next) {
-            NEXT.setOpaque(this, next);
+        void spNext(Node<T, R> next) {
+            NEXT.set(this, next);
         }
 
         Node<T, R> loNext() {
