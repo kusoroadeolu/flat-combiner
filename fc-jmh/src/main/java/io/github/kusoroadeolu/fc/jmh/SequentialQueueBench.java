@@ -28,9 +28,9 @@ import java.util.concurrent.TimeUnit;
 /* Thrpt
 * Benchmark                                (type)   Mode  Cnt   Score   Error   Units
 SequentialQueueBench.eightThreads           JDK  thrpt   45   9.952 ± 0.155  ops/us
-SequentialQueueBench.eightThreads      Combiner  thrpt   45  25.189 ± 1.086  ops/us
+SequentialQueueBench.eightThreads  Combiner  thrpt   30  29.501 ± 0.120  ops/us
 SequentialQueueBench.fourThreads            JDK  thrpt   45   8.936 ± 0.149  ops/us
-SequentialQueueBench.fourThreads       Combiner  thrpt   45  24.848 ± 0.475  ops/u
+SequentialQueueBench.fourThreads   Combiner  thrpt   30  29.898 ± 0.457  ops/us
 * */
 
 /* Thrpt using @Contended
@@ -86,7 +86,7 @@ SequentialQueueBench.fourThreads   avgt   30  0.325 ± 0.016  us/op
 public class SequentialQueueBench {
 
     private Queue<Integer> queue;
-    @Param({ "JDK", "Handoff", "Combiner"})
+    @Param({  "Handoff", "Combiner", "JDK"})
     private String type;
 
     @State(Scope.Thread)

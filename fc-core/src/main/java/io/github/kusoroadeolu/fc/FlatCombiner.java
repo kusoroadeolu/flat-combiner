@@ -275,7 +275,6 @@ public class FlatCombiner<T> implements Combiner<T>{
 
 
     static class FCLock {
-        static final int HELD = 1;
         static final int FREE = 0;
         private final AtomicInteger state;
 
@@ -285,7 +284,7 @@ public class FlatCombiner<T> implements Combiner<T>{
 
         boolean tryAcquire(){
             var s = state;
-            return s.getAcquire() == FREE && s.compareAndSet(FREE, HELD);
+            return s.getAcquire() == FREE && s.getAndIncrement() == FREE;
         }
 
 
